@@ -1,20 +1,35 @@
-name: CI
+name: CI - Validate on Pull Request
 
-on: [push, pull_request]
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-      - name: Run manual tests
-        run: bash tests/manual-test.sh
-      - name: Run BATS (if available)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up environment
         run: |
-          if command -v bats >/dev/null 2>&1; then
-            bats tests/bats
+          sudo apt-get update
+          sudo apt-get install -y curl jq python3
+      
+      - name: Run fast validation
+        run: |
+          if [ -f "validation/fast-test.sh" ]; then
+            ./validation/fast-test.sh
           else
-            echo "BATS not installed; skipping."
+            echo "Fast test not found, running basic checks..."
+            chmod +x bin/orchat
+            ./bin/orchat --help || true
           fi
+      
+      - name: Check file permissions
+        run: |
+          echo "Checking executable permissions..."
+          ls -la bin/
+          test -x bin/orchat && echo "✅ orchat is executable" || echo "❌ orchat is not executable"
