@@ -1,0 +1,31 @@
+[orchat]
+binary = "orchat"
+supports_streaming = true
+supports_multiturn = true
+description = "OpenRouter CLI with Phase 3 advanced features"
+version = "0.3.0"
+
+[defaults]
+model = "openai/gpt-3.5-turbo"
+temperature = 0.7
+max_context_length = 4000
+max_history_length = 20
+session_dir = "~/.orchat/sessions"
+
+[features]
+api_key_management = true
+model_browser = true
+session_persistence = true
+multi_turn = true
+robust_streaming = true
+config_integration = true
+
+[limits]
+max_tokens_per_request = 1000
+max_sessions = 50
+session_timeout_hours = 24
+
+[ui]
+show_timestamps = true
+color_output = true
+progress_indicator = true

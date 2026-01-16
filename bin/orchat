@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# ORCHAT CLI WRAPPER - Enhanced version
+
+# Find root directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ORCHAT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+export ORCHAT_ROOT
+
+# Load bootstrap
+if [[ -f "$ORCHAT_ROOT/src/bootstrap.sh" ]]; then
+    # shellcheck source=/dev/null
+    source "$ORCHAT_ROOT/src/bootstrap.sh"
+else
+    echo "[ERROR] Could not find bootstrap.sh" >&2
+    exit 1
+fi
+
+# Call main
+main "$@"

@@ -1,0 +1,6 @@
+{
+  "model": "${MODEL}",
+  "messages": ${MESSAGES},
+  "temperature": ${TEMPERATURE},
+  "stream": ${STREAM}
+}

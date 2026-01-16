@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+# Industrial-grade JSON payload construction with Python safety
+
+payload_build() {
+    local messages_json="$1"
+    local model="${2:-${RESOLVED_MODEL:-openai/gpt-3.5-turbo}}"
+    local temperature="${3:-${RESOLVED_TEMPERATURE:-0.7}}"
+    local stream="${4:-false}"
+    local max_tokens="${5:-}"
+    local top_p="${6:-}"
+    local frequency_penalty="${7:-}"
+    local presence_penalty="${8:-}"
+
+    # Validate inputs
+    if [[ -z "$messages_json" ]] || [[ "$messages_json" == "[]" ]]; then
+        echo "[ERROR] Empty messages array" >&2
+        return 1
+    fi
+
+    # Build payload with Python (guaranteed valid JSON)
+    python3 -c "
+import json, sys
+
+messages = '''$messages_json'''
+model = '''$model'''
+temperature = float('''$temperature''')
+stream = '''$stream'''.lower() == 'true'
+max_tokens = '''$max_tokens'''
+top_p = '''$top_p'''
+frequency_penalty = '''$frequency_penalty'''
+presence_penalty = '''$presence_penalty'''
+
+try:
+    # Parse messages to ensure valid JSON
+    messages_obj = json.loads(messages)
+    
+    # Build base payload
+    payload = {
+        'model': model,
+        'messages': messages_obj,
+        'temperature': temperature,
+        'stream': stream
+    }
+    
+    # Optional parameters
+    if max_tokens and max_tokens.strip() and max_tokens.lower() != 'none':
+        payload['max_tokens'] = int(max_tokens)
+    
+    if top_p and top_p.strip() and top_p.lower() != 'none':
+        payload['top_p'] = float(top_p)
+    
+    if frequency_penalty and frequency_penalty.strip() and frequency_penalty.lower() != 'none':
+        payload['frequency_penalty'] = float(frequency_penalty)
+    
+    if presence_penalty and presence_penalty.strip() and presence_penalty.lower() != 'none':
+        payload['presence_penalty'] = float(presence_penalty)
+    
+    # OpenRouter specific fields
+    if 'openrouter' in model or 'openai' in model:
+        payload['temperature'] = min(max(temperature, 0.0), 2.0)
+    
+    print(json.dumps(payload, separators=(',', ':')))
+    
+except json.JSONDecodeError as e:
+    sys.stderr.write(f'[ERROR] Invalid messages JSON: {e}\\n')
+    sys.exit(1)
+except ValueError as e:
+    sys.stderr.write(f'[ERROR] Invalid parameter value: {e}\\n')
+    sys.exit(1)
+except Exception as e:
+    sys.stderr.write(f'[ERROR] Payload construction failed: {e}\\n')
+    sys.exit(1)
+" 2>/dev/null || {
+    # Fallback to jq template
+    echo "[WARN] Using jq fallback for payload construction" >&2
+    local template='{"model":"'"$model"'","messages":'"$messages_json"',"temperature":'"$temperature"',"stream":'"$stream"'}'
+    
+    if [[ -n "$max_tokens" ]]; then
+        template=$(echo "$template" | jq --argjson mt "$max_tokens" '. + {"max_tokens": $mt}' 2>/dev/null || echo "$template")
+    fi
+    
+    echo "$template"
+}
+}
+
+# Validate payload structure
+payload_validate() {
+    local payload="$1"
+    
+    python3 -c "
+import json, sys
+try:
+    data = json.loads('''$payload''')
+    
+    required = ['model', 'messages', 'temperature', 'stream']
+    for field in required:
+        if field not in data:
+            print(f'MISSING_FIELD: {field}')
+            sys.exit(1)
+    
+    if not isinstance(data['messages'], list) or len(data['messages']) == 0:
+        print('INVALID_MESSAGES: Must be non-empty list')
+        sys.exit(1)
+    
+    # Validate each message
+    for i, msg in enumerate(data['messages']):
+        if not isinstance(msg, dict):
+            print(f'MESSAGE_{i}_NOT_DICT')
+            sys.exit(1)
+        if 'role' not in msg or 'content' not in msg:
+            print(f'MESSAGE_{i}_MISSING_FIELDS')
+            sys.exit(1)
+        if msg['role'] not in ['system', 'user', 'assistant']:
+            print(f'MESSAGE_{i}_INVALID_ROLE: {msg[\"role\"]}')
+            sys.exit(1)
+    
+    # Validate temperature range
+    temp = data.get('temperature', 0.7)
+    if not isinstance(temp, (int, float)) or temp < 0 or temp > 2:
+        print(f'INVALID_TEMPERATURE: {temp}')
+        sys.exit(1)
+    
+    print('VALID')
+    
+except json.JSONDecodeError as e:
+    print(f'INVALID_JSON: {e}')
+    sys.exit(1)
+except Exception as e:
+    print(f'ERROR: {e}')
+    sys.exit(1)
+" 2>/dev/null || echo "VALIDATION_FAILED"
+}
+
+# Generate payload from template file
+payload_from_template() {
+    local template_file="$1"
+    local model="$2"
+    local messages_json="$3"
+    local temperature="$4"
+    
+    if [[ ! -f "$template_file" ]]; then
+        echo "[ERROR] Template file not found: $template_file" >&2
+        return 1
+    fi
+    
+    # Use Python to safely merge template with values
+    python3 -c "
+import json, sys
+try:
+    with open('$template_file', 'r') as f:
+        template = json.load(f)
+    
+    # Override with provided values
+    template['model'] = '''$model'''
+    
+    messages = json.loads('''$messages_json''')
+    template['messages'] = messages
+    
+    if '''$temperature''':
+        template['temperature'] = float('''$temperature''')
+    
+    print(json.dumps(template))
+except Exception as e:
+    sys.stderr.write(f'[ERROR] Failed to load template: {e}\\n')
+    sys.exit(1)
+" 2>/dev/null || return 1
+}

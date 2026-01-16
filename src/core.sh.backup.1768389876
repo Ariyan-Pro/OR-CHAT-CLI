@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CURL_OPTS=(-sS --fail --show-error --max-time 30)
+
+# small retry mechanism
+_http_post() {
+    local data="$1"
+    local attempt=0
+    local max=2
+    local resp
+    while true; do
+        resp="$(curl "${CURL_OPTS[@]}" -X POST "$ORCHAT_API_URL" \
+            -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$data" 2>&1)" || rc=$? && rc=${rc:-0}
+        if [[ ${rc:-0} -eq 0 ]]; then
+            printf '%s' "$resp"
+            return 0
+        fi
+        attempt=$((attempt+1))
+        if [[ $attempt -gt $max ]]; then
+            echo "[ERROR] Network/API failure: $resp" >&2
+            return 3  # E_NETWORK_FAIL
+        fi
+        sleep $((2 ** attempt))
+    done
+}
+
+run_orchat() {
+    local prompt="$1"
+    local system_msg=""
+    
+    # FIX: Use parameter expansion with default value
+    if [[ -n "${RESOLVED_SYSTEM_FILE:-}" ]] && [[ -f "$RESOLVED_SYSTEM_FILE" ]]; then
+        system_msg=$(<"$RESOLVED_SYSTEM_FILE")
+    fi
+    
+    local esc_prompt
+    esc_prompt=$(escape_json_string "$prompt")
+    local esc_system
+    esc_system=$(escape_json_string "$system_msg")
+    
+    # Build JSON body safely
+    local json_body
+    if [[ -n "$esc_system" ]]; then
+        json_body=$(cat <<BODY
+{
+  "model": "${RESOLVED_MODEL:-openai/gpt-3.5-turbo}",
+  "messages": [
+    {"role": "system", "content": "$esc_system"},
+    {"role": "user", "content": "$esc_prompt"}
+  ],
+  "temperature": ${RESOLVED_TEMPERATURE:-0.7}
+  "max_tokens": ${RESOLVED_MAX_TOKENS:-1000},
+}
+BODY
+)
+    else
+        json_body=$(cat <<BODY
+{
+  "model": "${RESOLVED_MODEL:-openai/gpt-3.5-turbo}",
+  "messages": [
+    {"role": "user", "content": "$esc_prompt"}
+  ],
+  "temperature": ${RESOLVED_TEMPERATURE:-0.7}
+}
+BODY
+)
+    fi
+    
+    response="$(_http_post "$json_body")" || exit 3  # E_NETWORK_FAIL
+    
+    # if API returns non-JSON error, catch it
+    echo "$response" | clean_json_output
+}
+
+# streaming path
+run_orchat_stream() {
+    local prompt="$1"
+    local system_msg=""
+    
+    # FIX: Use parameter expansion with default value
+    if [[ -n "${RESOLVED_SYSTEM_FILE:-}" ]] && [[ -f "$RESOLVED_SYSTEM_FILE" ]]; then
+        system_msg=$(<"$RESOLVED_SYSTEM_FILE")
+    fi
+    
+    local esc_prompt
+    esc_prompt=$(escape_json_string "$prompt")
+    local esc_system
+    esc_system=$(escape_json_string "$system_msg")
+    
+    # Build JSON for streaming
+    local json_body
+    if [[ -n "$esc_system" ]]; then
+        json_body=$(cat <<BODY
+{
+  "model": "${RESOLVED_MODEL:-openai/gpt-3.5-turbo}",
+  "messages": [
+    {"role": "system", "content": "$esc_system"},
+    {"role": "user", "content": "$esc_prompt"}
+  ],
+  "temperature": ${RESOLVED_TEMPERATURE:-0.7},
+  "max_tokens": ${RESOLVED_MAX_TOKENS:-1000},
+  "stream": true
+}
+BODY
+)
+    else
+        json_body=$(cat <<BODY
+{
+  "model": "${RESOLVED_MODEL:-openai/gpt-3.5-turbo}",
+  "messages": [
+    {"role": "user", "content": "$esc_prompt"}
+  ],
+  "temperature": ${RESOLVED_TEMPERATURE:-0.7},
+  "stream": true
+}
+BODY
+)
+    fi
+    
+    # use --no-buffer / -N and process chunks line by line
+    curl --no-buffer -sS -X POST "$ORCHAT_API_URL" \
+        -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+        -H "Content-Type: application/json" \
+        -d "$json_body" 2>/dev/null | handle_stream_chunks
+}

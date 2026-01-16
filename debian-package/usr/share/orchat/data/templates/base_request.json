@@ -1,0 +1,5 @@
+﻿{
+    "model": "mistral-small",
+    "messages": [],
+    "temperature": 0.7
+}

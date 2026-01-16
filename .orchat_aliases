@@ -1,0 +1,25 @@
+# ORCHAT Aliases - add to your ~/.bashrc or ~/.zshrc
+
+# Quick aliases
+alias ai='orchat'
+alias aimodels='orchat --models'
+alias aisetup='orchat --setup'
+alias aichat='orchat --interactive'
+alias aistream='orchat --stream'
+
+# Model-specific shortcuts
+alias gpt='orchat -m "openai/gpt-3.5-turbo"'
+alias gpt4='orchat -m "openai/gpt-4"'
+alias mistral='orchat -m "mistralai/mistral-small"'
+alias gemini='orchat -m "google/gemini-flash"'
+alias freeai='orchat -m "allenai/molmo-2-8b:free"'
+
+# Quick tasks
+alias aicode='orchat -m "openai/gpt-4" "Write code for:"'
+alias aihelp='orchat "Explain this:"'
+alias aitranslate='orchat "Translate to English:"'
+
+# Add to PATH if not already
+if [[ ":$PATH:" != *":$(pwd)/bin:"* ]]; then
+    export PATH="$(pwd)/bin:$PATH"
+fi

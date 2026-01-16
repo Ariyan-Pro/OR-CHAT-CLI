@@ -1,0 +1,385 @@
+﻿#!/usr/bin/env bash
+#
+# ORCHAT DOCTOR - System diagnostics and health check
+# Phase 4.4: Diagnostic tools implementation
+#
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
+ORCHAT_BIN="${ORCHAT_BIN:-./bin/orchat}"
+CONFIG_FILE="${CONFIG_FILE:-./config/orchat.toml}"
+LOG_DIR="${LOG_DIR:-./logs}"
+MAX_LOG_SIZE_MB=100
+
+print_header() {
+    echo -e "\n${BLUE}=== $1 ===${NC}"
+}
+
+print_success() {
+    echo -e "${GREEN}✓ $1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠  $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}✗ $1${NC}"
+}
+
+check_executable() {
+    print_header "1. EXECUTABLE CHECK"
+    
+    if [[ -f "$ORCHAT_BIN" && -x "$ORCHAT_BIN" ]]; then
+        print_success "ORCHAT binary found and executable: $ORCHAT_BIN"
+        
+        # Check shebang
+        if head -n1 "$ORCHAT_BIN" | grep -q "^#!/"; then
+            print_success "Valid shebang found"
+        else
+            print_warning "No shebang in ORCHAT binary"
+        fi
+        
+        # Check file size
+        local size=$(wc -c < "$ORCHAT_BIN")
+        if [[ $size -gt 1000 ]]; then
+            print_success "Binary size: $((size/1024)) KB (reasonable)"
+        else
+            print_warning "Binary size very small: $size bytes"
+        fi
+        
+    else
+        print_error "ORCHAT binary not found or not executable: $ORCHAT_BIN"
+        return 1
+    fi
+}
+
+check_config() {
+    print_header "2. CONFIGURATION CHECK"
+    
+    if [[ -f "$CONFIG_FILE" ]]; then
+        print_success "Config file found: $CONFIG_FILE"
+        
+        # Check config syntax
+        if command -v tomlcheck &>/dev/null; then
+            if tomlcheck "$CONFIG_FILE"; then
+                print_success "TOML syntax valid"
+            else
+                print_error "TOML syntax invalid"
+            fi
+        else
+            print_warning "tomlcheck not installed, skipping syntax validation"
+        fi
+        
+        # Check required sections
+        local required_sections=("api" "model" "limits")
+        for section in "${required_sections[@]}"; do
+            if grep -q "^\[$section\]" "$CONFIG_FILE"; then
+                print_success "Section [$section] found"
+            else
+                print_warning "Section [$section] missing"
+            fi
+        done
+        
+        # Check API key
+        if grep -q "api_key" "$CONFIG_FILE"; then
+            local api_key=$(grep "api_key" "$CONFIG_FILE" | cut -d= -f2 | tr -d ' "' | head -n1)
+            if [[ ${#api_key} -ge 20 ]]; then
+                print_success "API key present (length: ${#api_key})"
+            else
+                print_warning "API key may be too short: ${#api_key} chars"
+            fi
+        else
+            print_error "API key not found in config"
+        fi
+        
+    else
+        print_error "Config file not found: $CONFIG_FILE"
+        return 1
+    fi
+}
+
+check_dependencies() {
+    print_header "3. DEPENDENCY CHECK"
+    
+    local dependencies=("curl" "jq" "bash" "grep" "awk")
+    local missing=0
+    
+    for dep in "${dependencies[@]}"; do
+        if command -v "$dep" &>/dev/null; then
+            local version=$("$dep" --version 2>/dev/null | head -n1)
+            print_success "$dep: $(echo $version | cut -d' ' -f1-3)"
+        else
+            print_error "$dep: NOT FOUND"
+            missing=$((missing + 1))
+        fi
+    done
+    
+    # Check Python modules if python is available
+    if command -v python3 &>/dev/null; then
+        local python_deps=("sys" "json" "os" "subprocess")
+        for dep in "${python_deps[@]}"; do
+            if python3 -c "import $dep" 2>/dev/null; then
+                print_success "Python module: $dep"
+            else
+                print_error "Python module missing: $dep"
+                missing=$((missing + 1))
+            fi
+        done
+    else
+        print_warning "python3 not found, skipping Python dependency check"
+    fi
+    
+    if [[ $missing -eq 0 ]]; then
+        print_success "All dependencies satisfied"
+    else
+        print_error "$missing dependencies missing"
+        return 1
+    fi
+}
+
+check_network() {
+    print_header "4. NETWORK CONNECTIVITY"
+    
+    # Test DNS resolution
+    if nslookup google.com &>/dev/null; then
+        print_success "DNS resolution working"
+    else
+        print_error "DNS resolution failed"
+        return 1
+    fi
+    
+    # Test API endpoint (if we have config)
+    if [[ -f "$CONFIG_FILE" ]]; then
+        local api_base=$(grep "api_base" "$CONFIG_FILE" | cut -d= -f2 | tr -d ' "' | head -n1)
+        if [[ -n "$api_base" ]]; then
+            if curl -s --connect-timeout 5 "$api_base/health" &>/dev/null; then
+                print_success "API endpoint reachable: $api_base"
+            else
+                print_warning "API endpoint not reachable (may be expected): $api_base"
+            fi
+        fi
+    fi
+    
+    # Check internet connectivity
+    if curl -s --connect-timeout 5 https://httpbin.org/get &>/dev/null; then
+        print_success "Internet connectivity confirmed"
+    else
+        print_warning "Internet connectivity test failed (may be firewall)"
+    fi
+}
+
+check_logs() {
+    print_header "5. LOGS DIRECTORY"
+    
+    if [[ -d "$LOG_DIR" ]]; then
+        print_success "Log directory exists: $LOG_DIR"
+        
+        # Check log files
+        local log_count=$(find "$LOG_DIR" -name "*.log" -type f | wc -l)
+        if [[ $log_count -gt 0 ]]; then
+            print_success "Found $log_count log files"
+            
+            # Check log sizes
+            find "$LOG_DIR" -name "*.log" -type f -exec du -h {} + | while read size file; do
+                local size_mb=$(echo "$size" | grep -oE '[0-9]+')
+                if [[ $size_mb -gt $MAX_LOG_SIZE_MB ]]; then
+                    print_warning "Log file large: $file ($size)"
+                else
+                    print_success "Log file size OK: $file ($size)"
+                fi
+            done
+        else
+            print_warning "No log files found (may be normal for fresh install)"
+        fi
+        
+        # Check permissions
+        if [[ -w "$LOG_DIR" ]]; then
+            print_success "Log directory writable"
+        else
+            print_error "Log directory not writable"
+            return 1
+        fi
+        
+    else
+        print_warning "Log directory not found: $LOG_DIR"
+        print_warning "Creating log directory..."
+        if mkdir -p "$LOG_DIR"; then
+            print_success "Created log directory: $LOG_DIR"
+        else
+            print_error "Failed to create log directory"
+            return 1
+        fi
+    fi
+}
+
+check_performance() {
+    print_header "6. PERFORMANCE CHECK"
+    
+    # Simple performance test
+    local start_time=$(date +%s%N)
+    
+    # Run a simple command to test basic functionality
+    if [[ -f "$ORCHAT_BIN" ]]; then
+        if "$ORCHAT_BIN" --help &>/dev/null; then
+            local end_time=$(date +%s%N)
+            local duration=$(( (end_time - start_time) / 1000000 ))
+            
+            if [[ $duration -lt 1000 ]]; then
+                print_success "Basic command execution: ${duration}ms (fast)"
+            elif [[ $duration -lt 5000 ]]; then
+                print_success "Basic command execution: ${duration}ms (normal)"
+            else
+                print_warning "Basic command execution: ${duration}ms (slow)"
+            fi
+        else
+            print_error "Failed to execute ORCHAT --help"
+        fi
+    fi
+    
+    # Check system resources
+    local load=$(uptime | awk -F'load average:' '{print $2}' | awk '{print $1}' | tr -d ',')
+    local cores=$(nproc 2>/dev/null || echo 4)
+    
+    if (( $(echo "$load < $cores" | bc -l 2>/dev/null || echo 1) )); then
+        print_success "System load: $load (under $cores cores)"
+    else
+        print_warning "System load: $load (high for $cores cores)"
+    fi
+    
+    # Check memory
+    if command -v free &>/dev/null; then
+        local free_mb=$(free -m | awk '/^Mem:/ {print $7}')
+        if [[ $free_mb -gt 100 ]]; then
+            print_success "Available memory: ${free_mb}MB (sufficient)"
+        else
+            print_warning "Available memory low: ${free_mb}MB"
+        fi
+    fi
+}
+
+check_security() {
+    print_header "7. SECURITY CHECKS"
+    
+    # Check file permissions
+    local sensitive_files=("$ORCHAT_BIN" "$CONFIG_FILE")
+    for file in "${sensitive_files[@]}"; do
+        if [[ -f "$file" ]]; then
+            local perms=$(stat -c "%a" "$file")
+            if [[ $perms == "755" || $perms == "700" ]]; then
+                print_success "File permissions OK: $file ($perms)"
+            else
+                print_warning "File permissions unusual: $file ($perms)"
+            fi
+        fi
+    done
+    
+    # Check for world-writable directories
+    local world_writable=$(find . -type d -perm -o+w ! -path "./.git/*" 2>/dev/null | head -5)
+    if [[ -n "$world_writable" ]]; then
+        print_warning "World-writable directories found:"
+        echo "$world_writable" | while read dir; do
+            print_warning "  $dir"
+        done
+    else
+        print_success "No world-writable directories found"
+    fi
+    
+    # Check for sensitive data in config
+    if [[ -f "$CONFIG_FILE" ]]; then
+        if grep -q "password\|secret\|token" "$CONFIG_FILE"; then
+            print_warning "Potential secrets found in config (check for exposure)"
+        fi
+    fi
+}
+
+run_diagnostic() {
+    echo -e "${BLUE}"
+    cat << "EOF"
+   ___  ____ _  _ ____ _  _ _  _ 
+  / _ \/ ___| || |  _ \ | | | || |
+ | | | \___ \ || | | | | | | | || |_
+ | |_| |___) || | |_| | |_| |__   _|
+  \___/|____/\_/|____/ \___/   |_|  
+  Diagnostic Tool - Phase 4.4
+EOF
+    echo -e "${NC}"
+    
+    local checks=(
+        check_executable
+        check_config
+        check_dependencies
+        check_network
+        check_logs
+        check_performance
+        check_security
+    )
+    
+    local passed=0
+    local failed=0
+    local warnings=0
+    
+    for check in "${checks[@]}"; do
+        if $check; then
+            passed=$((passed + 1))
+        else
+            case $? in
+                1) failed=$((failed + 1)) ;;
+                2) warnings=$((warnings + 1)) ;;
+            esac
+        fi
+    done
+    
+    print_header "DIAGNOSTIC SUMMARY"
+    echo -e "${GREEN}Passed: $passed${NC}"
+    echo -e "${YELLOW}Warnings: $warnings${NC}"
+    echo -e "${RED}Failed: $failed${NC}"
+    
+    if [[ $failed -eq 0 ]]; then
+        if [[ $warnings -eq 0 ]]; then
+            print_success "All checks passed! System is healthy."
+            return 0
+        else
+            print_warning "System operational with $warnings warnings"
+            return 2
+        fi
+    else
+        print_error "System has $failed critical issues"
+        return 1
+    fi
+}
+
+# Main execution
+main() {
+    local command="${1:-diagnose}"
+    
+    case "$command" in
+        diagnose)
+            run_diagnostic
+            ;;
+        fix)
+            echo "Auto-fix functionality coming soon"
+            ;;
+        report)
+            run_diagnostic 2>&1 | tee "orchat-doctor-report-$(date +%Y%m%d-%H%M%S).log"
+            ;;
+        *)
+            echo "Usage: $0 {diagnose|fix|report}"
+            echo "  diagnose - Run full diagnostic check"
+            echo "  fix      - Attempt to fix common issues"
+            echo "  report   - Generate diagnostic report"
+            exit 1
+            ;;
+    esac
+}
+
+# Run main function with all arguments
+main "$@"

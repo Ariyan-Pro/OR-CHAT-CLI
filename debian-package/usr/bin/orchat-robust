@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# ROBUST WRAPPER - never crashes
+
+# Trap errors
+trap 'echo "[ERROR] Script interrupted" >&2; exit 130' INT TERM
+trap 'echo "[ERROR] Script failed at line $LINENO" >&2' ERR
+
+# Find ORCHAT_ROOT
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ORCHAT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+export ORCHAT_ROOT
+
+# Safe source function
+safe_source() {
+    local file="$1"
+    if [[ -f "$file" ]]; then
+        # shellcheck source=/dev/null
+        source "$file" 2>/dev/null || {
+            echo "[WARN] Failed to source: $file" >&2
+            return 1
+        }
+    else
+        echo "[ERROR] File not found: $file" >&2
+        return 1
+    fi
+}
+
+# Load bootstrap safely
+if [[ -f "$ORCHAT_ROOT/src/bootstrap.sh" ]]; then
+    echo "[DEBUG] Loading bootstrap.sh" >&2
+    # shellcheck source=/dev/null
+    source "$ORCHAT_ROOT/src/bootstrap.sh" 2>/dev/null || {
+        echo "[ERROR] Failed to load bootstrap" >&2
+        exit 1
+    }
+    
+    # Call main with all arguments
+    if declare -f main >/dev/null 2>&1; then
+        main "$@"
+    else
+        echo "[ERROR] main() function not found" >&2
+        exit 1
+    fi
+else
+    echo "[ERROR] bootstrap.sh not found at: $ORCHAT_ROOT/src/bootstrap.sh" >&2
+    exit 1
+fi

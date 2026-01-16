@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  orchat:
+    build: .
+    volumes:
+      - ./config:/config
+      - ./sessions:/sessions
+    environment:
+      - ORCHAT_CONFIG_DIR=/config
+      - ORCHAT_HISTORY_DIR=/sessions
+    command: ["orchat", "-i"]
+    stdin_open: true
+    tty: true
+
+  orchat-cli:
+    build: .
+    volumes:
+      - ./config:/config
+      - ./sessions:/sessions
+    environment:
+      - ORCHAT_CONFIG_DIR=/config
+      - ORCHAT_HISTORY_DIR=/sessions
+    command: ["orchat"]
+    profiles: ["cli"]

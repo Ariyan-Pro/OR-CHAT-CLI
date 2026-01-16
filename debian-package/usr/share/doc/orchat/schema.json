@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ORCHAT Configuration Schema",
+  "type": "object",
+  "properties": {
+    "orchat": {
+      "type": "object",
+      "properties": {
+        "binary": {"type": "string"},
+        "supports_streaming": {"type": "boolean"},
+        "supports_multiturn": {"type": "boolean"},
+        "description": {"type": "string"},
+        "version": {"type": "string"}
+      },
+      "required": ["binary", "supports_streaming"]
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "model": {"type": "string"},
+        "temperature": {"type": "number", "minimum": 0, "maximum": 2},
+        "max_context_length": {"type": "integer", "minimum": 100},
+        "max_history_length": {"type": "integer", "minimum": 1, "maximum": 100}
+      }
+    }
+  }
+}

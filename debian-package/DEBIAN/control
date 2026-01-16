@@ -1,0 +1,11 @@
+Package: orchat
+Version: 0.3.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: bash (>=4.0), python3, jq, curl
+Maintainer: ORCHAT Team <orchat@example.com>
+Description: OpenRouter CLI with multi-turn chat and streaming
+ ORCHAT is a production-grade CLI for interacting with OpenRouter AI models.
+ It features persistent conversations, robust streaming, and enterprise controls.
+Homepage: https://github.com/orchat/orchat

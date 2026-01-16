@@ -1,0 +1,22 @@
+#!/bin/bash
+# Pre-removal script for ORCHAT
+
+set -e
+
+echo "Preparing to remove ORCHAT..."
+echo ""
+
+# Check if any sessions are active
+if [ -d "/var/lib/orchat/sessions" ]; then
+    session_count=$(find /var/lib/orchat/sessions -name "*.json" -type f | wc -l)
+    if [ "$session_count" -gt 0 ]; then
+        echo "Warning: $session_count session files will be removed."
+        echo "Back them up if needed: cp -r /var/lib/orchat/sessions ~/orchat-sessions-backup"
+    fi
+fi
+
+# Check if custom config exists
+if [ -f "/etc/orchat/orchat.toml" ] && ! grep -q "default configuration" /etc/orchat/orchat.toml 2>/dev/null; then
+    echo "Warning: Custom configuration at /etc/orchat/orchat.toml will be removed."
+    echo "Back it up if needed: cp /etc/orchat/orchat.toml ~/orchat-config-backup.toml"
+fi

@@ -1,0 +1,42 @@
+#!/bin/bash
+# Post-installation script for ORCHAT
+
+set -e
+
+echo "Setting up ORCHAT..."
+echo ""
+
+# Create config directory
+mkdir -p /etc/orchat
+if [ ! -f /etc/orchat/orchat.toml ]; then
+    echo "Creating default configuration..."
+    cat > /etc/orchat/orchat.toml << 'TOML_EOF'
+[orchat]
+binary = "/usr/bin/orchat"
+supports_streaming = true
+supports_multiturn = true
+
+[defaults]
+model = "openai/gpt-3.5-turbo"
+temperature = 0.7
+max_context_length = 4000
+max_history_length = 20
+TOML_EOF
+    chmod 644 /etc/orchat/orchat.toml
+fi
+
+# Create user config directory
+mkdir -p /etc/skel/.config/orchat
+echo "# Place your OpenRouter API key here" > /etc/skel/.config/orchat/config
+chmod 600 /etc/skel/.config/orchat/config
+
+# Create system-wide documentation
+mkdir -p /usr/share/doc/orchat/examples
+cp /usr/lib/orchat/examples/* /usr/share/doc/orchat/examples/ 2>/dev/null || true
+
+echo "ORCHAT installed successfully!"
+echo ""
+echo "To get started:"
+echo "1. Set your API key: mkdir -p ~/.config/orchat && echo 'YOUR_KEY' > ~/.config/orchat/config"
+echo "2. Run: orchat --help"
+echo "3. For interactive mode: orchat -i"

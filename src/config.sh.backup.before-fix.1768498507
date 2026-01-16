@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+# Configuration management for ORCHAT
+
+CONFIG_DIR="${ORCHAT_CONFIG_DIR:-$HOME/.config/orchat}"
+CONFIG_FILE="$CONFIG_DIR/config"
+SCHEMA_FILE="$CONFIG_DIR/schema.json"
+
+# Load configuration
+config_load() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        local first_line
+        first_line=$(head -n 1 "$CONFIG_FILE" 2>/dev/null || true)
+        
+        # Check if file contains just an API key (no = sign)
+        if [[ "$first_line" =~ ^sk-or- ]] && [[ ! "$first_line" =~ = ]]; then
+            # It's just an API key
+            export OPENROUTER_API_KEY="$first_line"
+            echo "[INFO] Loaded API key from $CONFIG_FILE" >&2
+        else
+            # It's a key=value config file
+            while IFS='=' read -r key value || [[ -n "$key" ]]; do
+                # Skip comments and empty lines
+                [[ "$key" =~ ^# ]] && continue
+                [[ -z "$key" ]] && continue
+                
+                # Remove quotes from value
+                value="${value%\"}"
+                value="${value#\"}"
+                value="${value%\'}"
+                value="${value#\'}"
+                
+                # Export as environment variable
+                export "$key"="$value"
+            done < "$CONFIG_FILE"
+            
+            echo "[INFO] Loaded configuration from $CONFIG_FILE" >&2
+        fi
+        return 0
+    else
+        echo "[WARN] No configuration file found at $CONFIG_FILE" >&2
+        return 1
+    fi
+}
+
+# Set configuration value
+config_set() {
+    local key="$1"
+    local value="$2"
+    
+    mkdir -p "$CONFIG_DIR"
+    
+    # If setting OPENROUTER_API_KEY and it looks like just a key, store as plain key
+    if [[ "$key" == "OPENROUTER_API_KEY" ]] && [[ "$value" =~ ^sk-or- ]] && [[ ! "$value" =~ = ]]; then
+        echo "$value" > "$CONFIG_FILE"
+        echo "[INFO] Set API key in configuration" >&2
+        return 0
+    fi
+    
+    # Otherwise, use key=value format
+    local temp_file
+    temp_file=$(mktemp)
+    
+    if [[ -f "$CONFIG_FILE" ]]; then
+        # Copy all lines except the one with our key
+        grep -v "^$key=" "$CONFIG_FILE" > "$temp_file" 2>/dev/null || true
+    fi
+    
+    # Add new key-value pair
+    echo "$key=\"$value\"" >> "$temp_file"
+    
+    # Replace config file
+    mv "$temp_file" "$CONFIG_FILE"
+    
+    echo "[INFO] Set $key in configuration" >&2
+}
+
+# Get configuration value
+config_get() {
+    local key="$1"
+    
+    if [[ -f "$CONFIG_FILE" ]]; then
+        if [[ "$key" == "OPENROUTER_API_KEY" ]]; then
+            # For API key, check if file is just the key
+            local first_line
+            first_line=$(head -n 1 "$CONFIG_FILE" 2>/dev/null || true)
+            if [[ "$first_line" =~ ^sk-or- ]] && [[ ! "$first_line" =~ = ]]; then
+                echo "$first_line"
+                return
+            fi
+        fi
+        
+        grep "^$key=" "$CONFIG_FILE" | cut -d'=' -f2- | tr -d '"'"'"
+    fi
+}
+
+# List all configuration
+config_list() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        echo "=== ORCHAT Configuration ==="
+        # If it's just an API key, format it nicely
+        local first_line
+        first_line=$(head -n 1 "$CONFIG_FILE" 2>/dev/null || true)
+        if [[ "$first_line" =~ ^sk-or- ]] && [[ ! "$first_line" =~ = ]]; then
+            echo "OPENROUTER_API_KEY=\"${first_line:0:20}...\""
+        else
+            cat "$CONFIG_FILE"
+        fi
+    else
+        echo "No configuration file found at $CONFIG_FILE"
+    fi
+}
+
+# Configuration CLI handler
+config_handle() {
+    case "${1:-}" in
+        "set")
+            if [[ $# -lt 3 ]]; then
+                echo "Usage: orchat config set <key> <value>"
+                return 1
+            fi
+            config_set "$2" "$3"
+            ;;
+        "get")
+            if [[ $# -lt 2 ]]; then
+                echo "Usage: orchat config get <key>"
+                return 1
+            fi
+            config_get "$2"
+            ;;
+        "list")
+            config_list
+            ;;
+        *)
+            echo "Usage: orchat config <set|get|list>"
+            echo ""
+            echo "Examples:"
+            echo "  orchat config set OPENROUTER_API_KEY \"your-key-here\""
+            echo "  orchat config get OPENROUTER_API_KEY"
+            echo "  orchat config list"
+            return 1
+            ;;
+    esac
+}
+
+# Load config on module initialization
+config_load

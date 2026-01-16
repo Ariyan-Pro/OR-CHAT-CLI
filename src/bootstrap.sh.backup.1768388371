@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+# Load enterprise observability modules
+source "$SCRIPT_DIR/enterprise_logger.sh"
+source "$SCRIPT_DIR/metrics_collector.sh"
+
+# ORCHAT Bootstrap - Phase 3 Complete
+set -euo pipefail
+
+# Determine root directory
+ORCHAT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export ORCHAT_ROOT
+
+# Load all modules in dependency order
+for module in constants utils config env core io interactive streaming model_browser history context payload gemini_integration session; do
+    module_file="$ORCHAT_ROOT/src/$module.sh"
+    
+    if [[ -f "$module_file" ]]; then
+        # shellcheck source=/dev/null
+        if source "$module_file" 2>/dev/null; then
+            echo "[DEBUG] Loaded module: $module" >&2
+        else
+            echo "[ERROR] Failed to load module: $module" >&2
+            exit 1
+        fi
+    else
+        echo "[WARN] Module file not found: $module_file" >&2
+    fi
+done
+
+# Phase 3: Initialize Gemini config if available
+if [[ -f "$HOME/.config/orchat/orchat.toml" ]] || [[ -f "config/orchat.toml" ]]; then
+    if type gemini_load_config &>/dev/null; then
+        if gemini_load_config 2>/dev/null; then
+            echo "[DEBUG] Loaded Gemini configuration" >&2
+        else
+            echo "[WARN] Failed to load Gemini config" >&2
+        fi
+    fi
+fi
+
+# Initialize session directory
+mkdir -p "$HOME/.orchat/sessions" 2>/dev/null || true
+
+# Set default history directory if not set
+export ORCHAT_HISTORY_DIR="${ORCHAT_HISTORY_DIR:-$HOME/.orchat/sessions}"
+export MAX_HISTORY_LENGTH="${MAX_HISTORY_LENGTH:-20}"
+
+# Main entry point
+main() {
+    # Parse command line arguments
+    if [[ $# -eq 0 ]]; then
+        echo "Usage: orchat <prompt> [options]"
+        echo "       orchat -i [--system <file>]"
+        echo "       orchat config <get|set|list>"
+        echo "       orchat models [--provider <name>]"
+        exit 0
+    fi
+    
+    # Check for interactive mode
+    if [[ "$1" == "-i" ]] || [[ "$1" == "--interactive" ]]; then
+        shift
+        if type start_interactive &>/dev/null; then
+            start_interactive "$@"
+        else
+            echo "[ERROR] Interactive module not loaded" >&2
+            exit 1
+        fi
+        return
+    fi
+    
+    # Check for config commands
+    if [[ "$1" == "config" ]]; then
+        shift
+        if type config_handle &>/dev/null; then
+            config_handle "$@"
+        else
+            echo "[ERROR] Config module not loaded" >&2
+            exit 1
+        fi
+        return
+    fi
+    
+    # Check for models command
+    if [[ "$1" == "models" ]]; then
+        shift
+        if type model_browser &>/dev/null; then
+            model_browser "$@"
+        else
+            echo "[ERROR] Model browser not loaded" >&2
+            exit 1
+        fi
+        return
+    fi
+    
+    # Single prompt execution
+    local prompt="$1"
+    shift
+    
+    # Parse remaining options
+    local stream=false
+    local model=""
+    local temperature=""
+    local system_file=""
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --stream)
+                stream=true
+                ;;
+            --no-stream)
+                stream=false
+                ;;
+            -m|--model)
+                model="$2"
+                shift
+                ;;
+            -t|--temperature)
+                temperature="$2"
+                shift
+                ;;
+            --system)
+                system_file="$2"
+                shift
+                ;;
+            *)
+                echo "[WARN] Unknown option: $1" >&2
+                ;;
+        esac
+        shift
+    done
+    
+    # Set resolved values
+    export RESOLVED_MODEL="${model:-${ORCHAT_MODEL:-openai/gpt-3.5-turbo}}"
+    export RESOLVED_TEMPERATURE="${temperature:-${ORCHAT_TEMPERATURE:-0.7}}"
+    export RESOLVED_SYSTEM_FILE="$system_file"
+    
+    # Build message
+    local messages_json
+    if [[ -n "$system_file" ]] && [[ -f "$system_file" ]]; then
+        system_content=$(<"$system_file")
+        messages_json=$(build_message_stack "$system_content" "$prompt" "[]")
+    else
+        messages_json='[{"role": "user", "content": "'"$prompt"'"}]'
+    fi
+    
+    # Build payload
+    local payload
+    if type payload_build &>/dev/null; then
+        payload=$(payload_build "$messages_json" "$RESOLVED_MODEL" "$RESOLVED_TEMPERATURE" "$stream")
+    else
+        # Fallback
+        payload='{"model": "'"$RESOLVED_MODEL"'", "messages": '"$messages_json"', "temperature": '"$RESOLVED_TEMPERATURE"', "stream": '"$stream"'}'
+    fi
+    
+    # Make API call
+    if [[ "$stream" == "true" ]]; then
+        if type run_orchat_stream &>/dev/null; then
+            run_orchat_stream "$payload"
+        else
+            echo "[ERROR] Streaming not available" >&2
+            exit 1
+        fi
+    else
+        if type run_orchat &>/dev/null; then
+            run_orchat "$payload"
+        else
+            echo "[ERROR] Core API module not loaded" >&2
+            exit 1
+        fi
+    fi
+}
+
+# Only run main if script is executed directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

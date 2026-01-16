@@ -1,0 +1,287 @@
+#!/usr/bin/env bash
+# analyze.sh - Code analysis and understanding (FIXED VERSION)
+# 50+ years: Read the code like a book
+
+# Language detection patterns
+detect_language() {
+    local file="$1"
+    local ext="${file##*.}"
+    
+    case "$ext" in
+        sh|bash) echo "bash" ;;
+        py) echo "python" ;;
+        js) echo "javascript" ;;
+        ts) echo "typescript" ;;
+        go) echo "go" ;;
+        rs) echo "rust" ;;
+        java) echo "java" ;;
+        cpp|c|cxx|cc) echo "c++" ;;
+        md) echo "markdown" ;;
+        json) echo "json" ;;
+        yaml|yml) echo "yaml" ;;
+        toml) echo "toml" ;;
+        html) echo "html" ;;
+        css) echo "css" ;;
+        sql) echo "sql" ;;
+        *) echo "unknown" ;;
+    esac
+}
+
+# Basic code statistics
+analyze_code_file() {
+    local file="$1"
+    
+    [[ ! -f "$file" ]] && { echo "[ERROR] File not found: $file" >&2; return 1; }
+    [[ ! -r "$file" ]] && { echo "[ERROR] Cannot read: $file" >&2; return 1; }
+    
+    local language
+    language=$(detect_language "$file")
+    
+    echo "=== ANALYSIS: $file ==="
+    echo "Language: $language"
+    
+    # Basic stats
+    local lines words chars
+    lines=$(wc -l < "$file" 2>/dev/null || echo 0)
+    words=$(wc -w < "$file" 2>/dev/null || echo 0)
+    chars=$(wc -m < "$file" 2>/dev/null || echo 0)
+    
+    echo "Lines: $lines"
+    echo "Words: $words"
+    echo "Characters: $chars"
+    
+    # Language-specific analysis
+    case "$language" in
+        bash|python|javascript|typescript|go|rust|java|c++)
+            # Count functions/methods
+            local functions=0
+            case "$language" in
+                bash)
+                    functions=$(grep -c '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*()[[:space:]]*{' "$file" || echo 0)
+                    ;;
+                python)
+                    functions=$(grep -c '^[[:space:]]*def[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$file" || echo 0)
+                    local classes=$(grep -c '^[[:space:]]*class[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$file" || echo 0)
+                    [[ $classes -gt 0 ]] && echo "Classes: $classes"
+                    ;;
+                javascript|typescript)
+                    functions=$(grep -c '^[[:space:]]*function[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$file" || echo 0)
+                    functions=$((functions + $(grep -c '^[[:space:]]*const[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*=[[:space:]]*([^)]*)[[:space:]]*=>' "$file" || echo 0)))
+                    ;;
+                go)
+                    functions=$(grep -c '^[[:space:]]*func[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$file" || echo 0)
+                    ;;
+                rust)
+                    functions=$(grep -c '^[[:space:]]*fn[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$file" || echo 0)
+                    ;;
+                java)
+                    functions=$(grep -c '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>[[:space:]]]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*(' "$file" || echo 0)
+                    local classes=$(grep -c '^[[:space:]]*class[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$file" || echo 0)
+                    [[ $classes -gt 0 ]] && echo "Classes: $classes"
+                    ;;
+                c++)
+                    functions=$(grep -c '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>[[:space:]]]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*(' "$file" || echo 0)
+                    local classes=$(grep -c '^[[:space:]]*class[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$file" || echo 0)
+                    [[ $classes -gt 0 ]] && echo "Classes: $classes"
+                    ;;
+            esac
+            
+            [[ $functions -gt 0 ]] && echo "Functions: $functions"
+            
+            # Count imports/includes
+            local imports=0
+            case "$language" in
+                bash) imports=$(grep -c '^[[:space:]]*source\|^[[:space:]]*\.\|^[#!/]' "$file" || echo 0) ;;
+                python) imports=$(grep -c '^[[:space:]]*import\|^[[:space:]]*from' "$file" || echo 0) ;;
+                javascript|typescript) imports=$(grep -c '^[[:space:]]*import\|^[#!/]' "$file" || echo 0) ;;
+                go) imports=$(grep -c '^[[:space:]]*import' "$file" || echo 0) ;;
+                rust) imports=$(grep -c '^[[:space:]]*use\|^[#!/]' "$file" || echo 0) ;;
+                java) imports=$(grep -c '^[[:space:]]*import' "$file" || echo 0) ;;
+                c++) imports=$(grep -c '^[[:space:]]*#include' "$file" || echo 0) ;;
+            esac
+            
+            [[ $imports -gt 0 ]] && echo "Imports: $imports"
+            ;;
+        
+        markdown)
+            # Count headings
+            local headings
+            headings=$(grep -c '^#' "$file" || echo 0)
+            echo "Headings: $headings"
+            
+            # Count code blocks
+            local code_blocks
+            code_blocks=$(grep -c '^```' "$file" || echo 0)
+            code_blocks=$((code_blocks / 2))
+            [[ $code_blocks -gt 0 ]] && echo "Code blocks: $code_blocks"
+            ;;
+        
+        json|yaml|toml)
+            # Count top-level keys/elements
+            if [[ "$language" == "json" ]]; then
+                local elements
+                elements=$(grep -c '^[[:space:]]*"[^"]*"[[:space:]]*:' "$file" || echo 0)
+                echo "Top-level keys: $elements"
+            fi
+            ;;
+    esac
+    
+    # Complexity indicators (simple heuristics)
+    if [[ $lines -gt 100 ]]; then
+        local long_lines
+        long_lines=$(awk 'length > 100' "$file" 2>/dev/null | wc -l || echo 0)
+        [[ $long_lines -gt 0 ]] && echo "Long lines (>100 chars): $long_lines"
+    fi
+    
+    echo ""
+    return 0
+}
+
+# Summarize a project directory
+analyze_project() {
+    local dir="${1:-.}"
+    local max_files="${2:-10}"
+    
+    echo "=== PROJECT ANALYSIS: $(basename "$dir") ==="
+    echo "Directory: $dir"
+    echo ""
+    
+    # Find code files
+    local -a code_files
+    mapfile -t code_files < <(find "$dir" -type f \( -name "*.sh" -o -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.go" -o -name "*.rs" -o -name "*.java" -o -name "*.cpp" -o -name "*.c" \) \
+        ! -path "*/.*" ! -path "*/node_modules/*" ! -path "*/dist/*" 2>/dev/null | head -$max_files)
+    
+    if [[ ${#code_files[@]} -eq 0 ]]; then
+        echo "No code files found."
+        return 1
+    fi
+    
+    echo "Found ${#code_files[@]} code files (showing first $max_files):"
+    
+    # Summary by language (WITH PROPER DECLARATION)
+    declare -A lang_count
+    declare -A lang_lines
+    
+    for file in "${code_files[@]}"; do
+        local lang
+        lang=$(detect_language "$file")
+        if [[ -n "${lang_count[$lang]+exists}" ]]; then
+            lang_count["$lang"]=$((lang_count["$lang"] + 1))
+        else
+            lang_count["$lang"]=1
+        fi
+        
+        local lines
+        lines=$(wc -l < "$file" 2>/dev/null || echo 0)
+        if [[ -n "${lang_lines[$lang]+exists}" ]]; then
+            lang_lines["$lang"]=$((lang_lines["$lang"] + lines))
+        else
+            lang_lines["$lang"]=$lines
+        fi
+    done
+    
+    echo ""
+    if [[ ${#lang_count[@]} -gt 0 ]]; then
+        echo "Language distribution:"
+        for lang in "${!lang_count[@]}"; do
+            echo "  - $lang: ${lang_count[$lang]} files, ${lang_lines[$lang]} lines"
+        done
+    else
+        echo "No language statistics available"
+    fi
+    
+    # Show largest files
+    echo ""
+    echo "Largest files:"
+    for file in "${code_files[@]}"; do
+        local lines
+        lines=$(wc -l < "$file" 2>/dev/null || echo 0)
+        echo "  $lines: $(basename "$file")"
+    done | sort -rn | head -5
+    
+    # Detailed analysis of first few files
+    echo ""
+    echo "Detailed analysis of first 3 files:"
+    local count=0
+    for file in "${code_files[@]}"; do
+        [[ $count -ge 3 ]] && break
+        analyze_code_file "$file" 2>/dev/null | head -20
+        count=$((count + 1))
+    done
+    
+    return 0
+}
+
+# AI-friendly code summarization
+summarize_for_ai() {
+    local file="$1"
+    local max_context_lines="${2:-50}"
+    
+    [[ ! -f "$file" ]] && { echo "[ERROR] File not found" >&2; return 1; }
+    
+    local language
+    language=$(detect_language "$file")
+    
+    echo "File: $(basename "$file")"
+    echo "Path: $file"
+    echo "Language: $language"
+    echo "Size: $(wc -l < "$file" 2>/dev/null || echo 0) lines"
+    echo ""
+    
+    case "$language" in
+        bash|python|javascript|typescript|go|rust|java|c++)
+            # Show file header (first 10 lines)
+            echo "=== FILE HEADER ==="
+            head -10 "$file"
+            echo ""
+            
+            # Show function signatures
+            echo "=== FUNCTION SIGNATURES ==="
+            case "$language" in
+                bash) grep '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*()[[:space:]]*{' "$file" 2>/dev/null || echo "(none)" ;;
+                python) grep '^[[:space:]]*def[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$file" 2>/dev/null || echo "(none)" ;;
+                javascript|typescript) grep -E '^[[:space:]]*(function|const[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*=[[:space:]]*\([^)]*\)[[:space:]]*=>)' "$file" 2>/dev/null || echo "(none)" ;;
+                go) grep '^[[:space:]]*func[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$file" 2>/dev/null || echo "(none)" ;;
+                rust) grep '^[[:space:]]*fn[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$file" 2>/dev/null || echo "(none)" ;;
+                java|c++) grep -E '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>[[:space:]]]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\(' "$file" 2>/dev/null | head -20 || echo "(none)" ;;
+            esac
+            ;;
+        
+        markdown)
+            # Show document structure
+            echo "=== DOCUMENT STRUCTURE ==="
+            grep '^#' "$file" 2>/dev/null | head -10 || echo "(no headings)"
+            ;;
+        
+        *)
+            # Generic file preview
+            echo "=== FILE PREVIEW ==="
+            head -$max_context_lines "$file"
+            ;;
+    esac
+    
+    echo ""
+    return 0
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Test mode
+    case "$1" in
+        "file")
+            analyze_code_file "${2:-$0}"
+            ;;
+        "project")
+            analyze_project "${2:-.}" "${3:-10}"
+            ;;
+        "summarize")
+            summarize_for_ai "${2:-$0}" "${3:-50}"
+            ;;
+        "test")
+            echo "Testing code analyzer..."
+            analyze_code_file "$0"
+            ;;
+        *)
+            echo "Usage: $0 {file <path>|project [dir] [max]|summarize <path> [lines]|test}"
+            ;;
+    esac
+fi

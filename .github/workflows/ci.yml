@@ -1,0 +1,20 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Run manual tests
+        run: bash tests/manual-test.sh
+      - name: Run BATS (if available)
+        run: |
+          if command -v bats >/dev/null 2>&1; then
+            bats tests/bats
+          else
+            echo "BATS not installed; skipping."
+          fi
