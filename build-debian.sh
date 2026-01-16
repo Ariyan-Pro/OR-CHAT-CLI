@@ -31,7 +31,7 @@ cp docs/* /tmp/orchat-pkg/usr/share/doc/orchat/ 2>/dev/null || true
 
 # Create control file
 echo "Creating control file..."
-cat > /tmp/orchat-pkg/DEBIAN/control << EOFEOFCONTROL
+cat > /tmp/orchat-pkg/DEBIAN/control << CONTROL
 Package: orchat
 Version: $VERSION
 Architecture: $ARCH
