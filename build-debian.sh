@@ -31,7 +31,7 @@ cp docs/* /tmp/orchat-pkg/usr/share/doc/orchat/ 2>/dev/null || true
 
 # Create control file
 echo "Creating control file..."
-cat > /tmp/orchat-pkg/DEBIAN/control << CONTROL
+cat > /tmp/orchat-pkg/DEBIAN/control << "CONTROL"
 Package: orchat
 Version: $VERSION
 Architecture: $ARCH
@@ -71,4 +71,4 @@ dpkg-deb --build /tmp/orchat-pkg orchat_${VERSION}_${ARCH}.deb
 echo "✅ Package built: orchat_${VERSION}_${ARCH}.deb"
 echo ""
 echo "To install: sudo dpkg -i orchat_${VERSION}_${ARCH}.deb"
-echo "To test: orchat --version"
+CONTROL
