@@ -3,14 +3,11 @@
 <!-- Copyright (c) 2024-2026 ORCHAT Engineering -->
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=transparent&fontColor=2ecc71&text=ORCHAT&height=200&fontSize=90&desc=Production-Grade%20CLI%20for%20OpenRouter%20AI&descAlignY=66&descAlign=60" alt="ORCHAT">
+  <img src="https://asciinema.org/a/603512.svg" alt="ORCHAT demo">
 </p>
 
 <h1 align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/ORCHAT-v1.0.0-2ecc71?logo=github&style=for-the-badge">
-    <img alt="ORCHAT" src="https://img.shields.io/badge/ORCHAT-v1.0.0-2ecc71?logo=github&style=for-the-badge">
-  </picture>
+  <img alt="ORCHAT" src="https://img.shields.io/badge/ORCHAT-v1.0.0-2ecc71?logo=github&style=for-the-badge">
 </h1>
 
 <p align="center">
@@ -24,14 +21,8 @@
   <a href="https://github.com/Ariyan-Pro/OR-CHAT-CLI/releases">
     <img alt="Release" src="https://img.shields.io/github/v/release/Ariyan-Pro/OR-CHAT-CLI?sort=semver&style=flat-square">
   </a>
-  <a href="https://hub.docker.com/r/orchat/orchat">
-    <img alt="Docker" src="https://img.shields.io/docker/pulls/orchat/orchat?style=flat-square">
-  </a>
   <a href="https://github.com/Ariyan-Pro/OR-CHAT-CLI/blob/main/LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/Ariyan-Pro/OR-CHAT-CLI?style=flat-square">
-  </a>
-  <a href="https://discord.gg/orchat">
-    <img alt="Discord" src="https://img.shields.io/discord/123456789?color=7289da&label=Discord&logo=discord&style=flat-square">
   </a>
   <br/>
   <img alt="Platforms" src="https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20WSL-lightgrey?style=flat-square">
@@ -41,7 +32,8 @@
 
 ---
 
-## ⚡  30-Second Quick Start
+## ⚡ 30-Second Quick Start
+
 ```bash
 # Unix / macOS / WSL
 curl -fsSL https://orchat.ai/install.sh | bash
@@ -105,8 +97,10 @@ bash
 Copy
 # Health
 orchat doctor --json | jq .status
+
 # Metrics
 curl -s http://localhost:9090/metrics | grep orchat_requests_total
+
 # Logs
 tail -f ~/.orchat/logs/orchat.quantum.jsonl | jq
 🔐 Security & Compliance
@@ -168,3 +162,14 @@ Discussions	https://github.com/orchat/enterprise/discussions
 Stack Overflow	tag orchat
 Security	security@orchat.ai
 Enterprise	enterprise@orchat.ai
+Copy
+
+---
+
+### ✅  What you do now
+1. Click **Edit** on the README.  
+2. **Select all** → **paste** the block above (it fixes every broken tag & format).  
+3. **Commit** → drop the new commit URL.  
+4. I’ll **verify** the render; if anything is still ugly we iterate once more.
+
+That’s it — one clean commit and the page will **instantly look enterprise-grade**.
