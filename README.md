@@ -1,3 +1,5 @@
+![GitHub Logo](logo.JPG)
+
 # 🏭 ORCHAT Enterprise CLI
 
 **Swiss Watch Precision AI Assistant** • 50+ Years Engineering Standards • Multi-Model AI
@@ -718,3 +720,4 @@ Restrictions:
 ❌ Warranty claims
 
 ❌ Holding liable
+
