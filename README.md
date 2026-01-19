@@ -6,6 +6,8 @@
 
 [![HuggingFace Spaces](https://img.shields.io/badge/🤗%20HuggingFace-Spaces-blue)](https://huggingface.co/spaces/Ariyan-Pro/ORCHAT-Enterprise)
 [![Debian Package](https://img.shields.io/badge/Debian-Package-8A2BE2)](https://github.com/Ariyan-Pro/OR-CHAT-CLI/releases)
+[![Kaggle Dataset](https://img.shields.io/badge/🏆-Kaggle%20Dataset-20BEFF)](https://www.kaggle.com/datasets/ariyannadeem/orchat-enterprise-cli)
+[![Kaggle Notebook](https://img.shields.io/badge/📓-Kaggle%20Notebook-00BFFF)](https://www.kaggle.com/code/ariyannadeem/orchat-enterprise-cli-demo)
 [![License](https://img.shields.io/badge/License-Enterprise-00FF00)](LICENSE)
 [![Engineering Standards](https://img.shields.io/badge/Engineering-50%2B%20Years-orange)]()
 
@@ -720,4 +722,5 @@ Restrictions:
 ❌ Warranty claims
 
 ❌ Holding liable
+
 
