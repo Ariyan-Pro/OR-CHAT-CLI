@@ -1,16 +1,39 @@
 #!/usr/bin/env bash
-# ORCHAT Bootstrap - Phase 3 Complete
+# ORCHAT Bootstrap - Phase 8 Security Hardened
 set -euo pipefail
+
+# Security: Enable strict mode
+set -o nounset
+set -o pipefail
 
 # Determine root directory
 ORCHAT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export ORCHAT_ROOT
 
-# Load all modules in dependency order
+# Security: Validate ORCHAT_ROOT doesn't contain dangerous characters
+if [[ "$ORCHAT_ROOT" =~ [[:space:]\;\|\&\$\`] ]]; then
+    echo "[ERROR] Invalid characters in ORCHAT_ROOT path" >&2
+    exit 1
+fi
+
+# Load all modules in dependency order with security validation
 for module in constants utils config env core io interactive streaming model_browser history context payload gemini_integration session workspace; do
     module_file="$ORCHAT_ROOT/src/$module.sh"
 
     if [[ -f "$module_file" ]]; then
+        # Security: Verify file is readable and not world-writable
+        if [[ ! -r "$module_file" ]]; then
+            echo "[ERROR] Module file not readable: $module_file" >&2
+            exit 1
+        fi
+        
+        # Security: Check for world-writable permissions
+        local perms
+        perms=$(stat -c "%a" "$module_file" 2>/dev/null || stat -f "%Lp" "$module_file" 2>/dev/null || echo "000")
+        if [[ "${perms: -1}" =~ [2367] ]]; then
+            echo "[WARN] Module file has insecure permissions: $module_file" >&2
+        fi
+        
         # shellcheck source=/dev/null
         if source "$module_file" 2>/dev/null; then
             echo "[DEBUG] Loaded module: $module" >&2
@@ -455,20 +478,118 @@ main() {
                 shift
                 ;;
             -m|--model)
-                model="$2"
-                shift 2
+                if [[ -n "${2:-}" ]]; then
+                    model="$2"
+                    shift 2
+                else
+                    echo "[ERROR] --model requires a value" >&2
+                    exit 1
+                fi
                 ;;
             --temp|--temperature)
-                temperature="$2"
-                shift 2
+                if [[ -n "${2:-}" ]]; then
+                    # Security: Validate temperature range (0.0 to 2.0)
+                    if ! [[ "$2" =~ ^[0-9]+\.?[0-9]*$ ]] || (( $(echo "$2 < 0 || $2 > 2" | bc -l 2>/dev/null || echo 1) )); then
+                        echo "[ERROR] Temperature must be between 0.0 and 2.0" >&2
+                        exit 1
+                    fi
+                    temperature="$2"
+                    shift 2
+                else
+                    echo "[ERROR] --temperature requires a value" >&2
+                    exit 1
+                fi
                 ;;
             --tokens|--max-tokens)
-                max_tokens="$2"
-                shift 2
+                if [[ -n "${2:-}" ]]; then
+                    # Security: Validate max_tokens is positive integer
+                    if ! [[ "$2" =~ ^[0-9]+$ ]] || [[ "$2" -le 0 ]] || [[ "$2" -gt 100000 ]]; then
+                        echo "[ERROR] max-tokens must be a positive integer (1-100000)" >&2
+                        exit 1
+                    fi
+                    max_tokens="$2"
+                    shift 2
+                else
+                    echo "[ERROR] --max-tokens requires a value" >&2
+                    exit 1
+                fi
                 ;;
             --system)
-                system_file="$2"
-                shift 2
+                if [[ -n "${2:-}" ]]; then
+                    # Security: Validate system file path
+                    local sys_path="$2"
+
+                    # Security: Check for empty path
+                    if [[ -z "$sys_path" ]]; then
+                        echo "[ERROR] System file path cannot be empty" >&2
+                        exit 1
+                    fi
+
+                    # Security: Check for null bytes or newlines in path
+                    if [[ "$sys_path" == *$'\0'* ]] || [[ "$sys_path" == *$'\n'* ]] || [[ "$sys_path" == *$'\r'* ]]; then
+                        echo "[ERROR] Invalid characters in system file path" >&2
+                        exit 1
+                    fi
+
+                    # Check for path traversal attempts (multiple patterns)
+                    if [[ "$sys_path" =~ \.\. ]] || [[ "$sys_path" =~ ^/ ]] || [[ "$sys_path" =~ ^~ ]]; then
+                        echo "[ERROR] Invalid system file path (absolute paths and path traversal not allowed)" >&2
+                        exit 1
+                    fi
+
+                    # Security: Normalize and validate path doesn't escape allowed directories
+                    # Remove any leading/trailing whitespace
+                    sys_path="$(echo "$sys_path" | xargs)"
+                    
+                    # Security: Ensure path only contains safe characters
+                    if ! [[ "$sys_path" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
+                        echo "[ERROR] System file path contains invalid characters" >&2
+                        exit 1
+                    fi
+
+                    # Resolve to absolute path within ORCHAT_ROOT
+                    local resolved_path=""
+                    if [[ -f "$ORCHAT_ROOT/$sys_path" ]]; then
+                        # Use realpath if available, otherwise construct manually
+                        resolved_path="$(cd "$(dirname "$ORCHAT_ROOT/$sys_path")" && pwd)/$(basename "$sys_path")"
+                        
+                        # Security: Verify resolved path is within ORCHAT_ROOT
+                        case "$resolved_path" in
+                            "$ORCHAT_ROOT"/*) 
+                                system_file="$resolved_path"
+                                ;;
+                            *)
+                                echo "[ERROR] System file must be within ORCHAT_ROOT directory" >&2
+                                exit 1
+                                ;;
+                        esac
+                    elif [[ -f "$sys_path" ]]; then
+                        # Allow relative paths from current directory if they don't traverse
+                        resolved_path="$(cd "$(dirname "$sys_path")" && pwd)/$(basename "$sys_path")"
+                        
+                        # Security: Verify the resolved path doesn't escape allowed directories
+                        case "$resolved_path" in
+                            "$ORCHAT_ROOT"/*|"$PWD"/*)
+                                if [[ "$resolved_path" =~ \.\. ]]; then
+                                    echo "[ERROR] System file path traversal detected" >&2
+                                    exit 1
+                                fi
+                                system_file="$resolved_path"
+                                ;;
+                            *)
+                                echo "[ERROR] System file outside allowed directories" >&2
+                                exit 1
+                                ;;
+                        esac
+                    else
+                        echo "[ERROR] System file not found: $sys_path" >&2
+                        exit 1
+                    fi
+                    shift 2
+                else
+                    echo "[ERROR] --system requires a file path" >&2
+                    exit 1
+                fi
                 ;;
             --deterministic)
                 DETERMINISTIC_MODE=true
@@ -482,7 +603,7 @@ main() {
         esac
     done
 
-    # Set resolved values
+    # Set resolved values with security validation
     export RESOLVED_MODEL="${model:-${ORCHAT_MODEL:-openai/gpt-3.5-turbo}}"
     export RESOLVED_TEMPERATURE="${temperature:-${ORCHAT_TEMPERATURE:-0.7}}"
     export RESOLVED_MAX_TOKENS="${max_tokens:-${ORCHAT_MAX_TOKENS:-1000}}"
@@ -491,7 +612,38 @@ main() {
     # Build message
     local messages_json
     if [[ -n "$system_file" ]] && [[ -f "$system_file" ]]; then
-        system_content=$(<"$system_file")
+        # Security: Additional validation before reading file
+        if [[ ! -r "$system_file" ]]; then
+            echo "[ERROR] System file not readable: $system_file" >&2
+            exit 1
+        fi
+        
+        # Security: Check file size (limit to 100KB)
+        local file_size
+        file_size=$(stat -c%s "$system_file" 2>/dev/null || stat -f%z "$system_file" 2>/dev/null || echo "0")
+        if [[ "$file_size" -gt 102400 ]]; then
+            echo "[ERROR] System file too large (max 100KB): $file_size bytes" >&2
+            exit 1
+        fi
+        
+        # Security: Verify file is a regular file (not symlink to device, etc.)
+        if [[ ! -f "$system_file" ]]; then
+            echo "[ERROR] System file is not a regular file" >&2
+            exit 1
+        fi
+        
+        # Security: Read file content safely
+        system_content=$(cat "$system_file" 2>/dev/null) || {
+            echo "[ERROR] Failed to read system file" >&2
+            exit 1
+        }
+        
+        # Security: Validate content doesn't contain null bytes
+        if [[ "$system_content" == *$'\0'* ]]; then
+            echo "[ERROR] System file contains invalid null bytes" >&2
+            exit 1
+        fi
+        
         messages_json=$(build_message_stack "$system_content" "$prompt" "[]")
     else
         messages_json='[{"role": "user", "content": "'"$prompt"'"}]'

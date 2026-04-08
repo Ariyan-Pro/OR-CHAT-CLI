@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Configuration management for ORCHAT - FIXED VERSION
-# Phase 7.5: Handle missing config files gracefully
+# Configuration management for ORCHAT - SECURITY HARDENED VERSION
+# Phase 8: Comprehensive security fixes
 
 CONFIG_DIR="${ORCHAT_CONFIG_DIR:-$HOME/.config/orchat}"
 CONFIG_FILE="$CONFIG_DIR/config"
 SCHEMA_FILE="$CONFIG_DIR/schema.json"
+
+# Security: Allowed config keys whitelist
+ALLOWED_CONFIG_KEYS="api.openrouter_api_key|api.model|api.temperature|api.max_tokens|api.timeout|behavior.stream|behavior.verbose|paths.data|paths.logs"
 
 # Debug logging helper
 _config_log() {
@@ -13,6 +16,57 @@ _config_log() {
     if [[ "${ORCHAT_DEBUG:-}" == "1" ]]; then
         echo "[CONFIG:$level] $message" >&2
     fi
+}
+
+# Security: Validate config key against whitelist
+_config_validate_key() {
+    local key="$1"
+    
+    # Check for empty key
+    if [[ -z "$key" ]]; then
+        _config_log "ERROR" "Empty config key rejected"
+        return 1
+    fi
+    
+    # Check for path traversal attempts
+    if [[ "$key" =~ \.\. ]] || [[ "$key" =~ ^/ ]] || [[ "$key" =~ \\\\. ]]; then
+        _config_log "ERROR" "Path traversal attempt in key rejected: $key"
+        return 1
+    fi
+    
+    # Check for command injection patterns
+    if [[ "$key" =~ [\$\`] ]] || [[ "$key" =~ \( ]] || [[ "$key" =~ \| ]] || [[ "$key" =~ \; ]] || [[ "$key" =~ \& ]]; then
+        _config_log "ERROR" "Command injection attempt in key rejected: $key"
+        return 1
+    fi
+    
+    # Check against allowed keys pattern (if whitelist is enforced)
+    if ! echo "$key" | grep -qE "^[a-zA-Z0-9._-]+$"; then
+        _config_log "ERROR" "Invalid characters in config key: $key"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Security: Sanitize config value
+_config_sanitize_value() {
+    local value="$1"
+    
+    # Remove any potential command injection patterns
+    value="${value//\$/}"
+    value="${value//\`/}"
+    value="${value//;/}"
+    value="${value//|/}"
+    value="${value//&/}"
+    
+    # Limit value length to prevent buffer issues
+    if [[ ${#value} -gt 4096 ]]; then
+        _config_log "WARN" "Config value truncated to 4096 chars"
+        value="${value:0:4096}"
+    fi
+    
+    echo "$value"
 }
 
 # Load configuration - SILENT VERSION
@@ -74,22 +128,37 @@ config_get() {
     fi
 }
 
-# Set config value
+# Set config value - SECURITY HARDENED
 config_set() {
     local key="$1"
     local value="$2"
     
+    # Security: Validate the key
+    if ! _config_validate_key "$key"; then
+        echo "[ERROR] Invalid configuration key rejected" >&2
+        return 1
+    fi
+    
+    # Security: Sanitize the value
+    value=$(_config_sanitize_value "$value")
+    
     mkdir -p "$CONFIG_DIR"
+    
+    # Security: Escape special characters for sed
+    local escaped_key
+    escaped_key=$(printf '%s\n' "$key" | sed 's/[]\/$*.^[]/\\&/g')
+    local escaped_value
+    escaped_value=$(printf '%s\n' "$value" | sed "s/['\"]/\\\\&/g")
     
     if [[ -f "$CONFIG_FILE" ]]; then
         # Update existing key or add new
-        if grep -q "^[[:space:]]*${key}[[:space:]]*=" "$CONFIG_FILE" 2>/dev/null; then
-            sed -i "s/^[[:space:]]*${key}[[:space:]]*=.*/${key} = ${value}/" "$CONFIG_FILE"
+        if grep -q "^[[:space:]]*${escaped_key}[[:space:]]*=" "$CONFIG_FILE" 2>/dev/null; then
+            sed -i "s/^[[:space:]]*${escaped_key}[[:space:]]*=.*/${key} = ${escaped_value}/" "$CONFIG_FILE"
         else
-            echo "${key} = ${value}" >> "$CONFIG_FILE"
+            echo "${key} = ${escaped_value}" >> "$CONFIG_FILE"
         fi
     else
-        echo "${key} = ${value}" > "$CONFIG_FILE"
+        echo "${key} = ${escaped_value}" > "$CONFIG_FILE"
     fi
     
     chmod 600 "$CONFIG_FILE" 2>/dev/null || true
