@@ -41,34 +41,41 @@ mkdir -p "$HOME/.orchat/sessions" 2>/dev/null || true
 export ORCHAT_HISTORY_DIR="${ORCHAT_HISTORY_DIR:-$HOME/.orchat/sessions}"
 export MAX_HISTORY_LENGTH="${MAX_HISTORY_LENGTH:-20}"
 
+# Global flag for deterministic mode
+DETERMINISTIC_MODE=false
+
 # Main entry point
 main() {
-    # Special cases: --help and --version
-    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-        echo "ORCHAT v0.3.3 - Enterprise CLI AI Assistant"
-        echo "Usage: orchat <prompt> [options]"
-        echo "       orchat -i [--system <file>]"
-        echo "       orchat config <get|set|list>"
-        echo "       orchat session <create|list|stats|cleanup> [args]"
-        echo "       orchat models [--provider <name>]"
-        echo ""
-        echo "Options:"
-        echo "  -m, --model MODEL       AI model to use (default: openai/gpt-3.5-turbo)"
-        echo "  --temp, --temperature N Temperature (0.0-2.0, default: 0.7)"
-        echo "  --tokens, --max-tokens N Maximum tokens in response (default: 1000)"
-        echo "  --stream                Stream response tokens in real-time"
-        echo "  --no-stream             Disable streaming (default)"
-        echo "  --system FILE          Use system prompt from file"
-        echo "  -h, --help             Show this help"
-        echo "  --version              Show version"
-        exit 0
-    fi
+    # First pass: check for --help or --version anywhere in arguments
+    for arg in "$@"; do
+        if [[ "$arg" == "--help" ]] || [[ "$arg" == "-h" ]]; then
+            echo "ORCHAT v0.3.3 - Enterprise CLI AI Assistant"
+            echo "Usage: orchat <prompt> [options]"
+            echo "       orchat -i [--system <file>]"
+            echo "       orchat config <get|set|list>"
+            echo "       orchat session <create|list|stats|cleanup> [args]"
+            echo "       orchat models [--provider <name>]"
+            echo ""
+            echo "Options:"
+            echo "  -m, --model MODEL       AI model to use (default: openai/gpt-3.5-turbo)"
+            echo "  --temp, --temperature N Temperature (0.0-2.0, default: 0.7)"
+            echo "  --tokens, --max-tokens N Maximum tokens in response (default: 1000)"
+            echo "  --stream                Stream response tokens in real-time"
+            echo "  --no-stream             Disable streaming (default)"
+            echo "  --system FILE          Use system prompt from file"
+            echo "  --deterministic         Enable deterministic mode (temperature=0.0)"
+            echo "  -h, --help             Show this help"
+            echo "  --version              Show version"
+            exit 0
+        fi
+        
+        if [[ "$arg" == "--version" ]] || [[ "$arg" == "-v" ]]; then
+            echo "ORCHAT v0.3.3 - Workstream 3 Integrated"
+            echo "Engineering: 50+ years legacy systems expertise"
+            exit 0
+        fi
+    done
     
-    if [[ "$1" == "--version" ]] || [[ "$1" == "-v" ]]; then
-        echo "ORCHAT v0.3.3 - Workstream 3 Integrated"
-        echo "Engineering: 50+ years legacy systems expertise"
-        exit 0
-    fi
     # Parse command line arguments
     if [[ $# -eq 0 ]]; then
         echo "Usage: orchat <prompt> [options]"
@@ -412,6 +419,7 @@ main() {
             exit 1
         fi
         return
+    fi
 
     # Check for session commands
     if [[ "$1" == "session" ]]; then
@@ -423,7 +431,6 @@ main() {
             exit 1
         fi
         return
-    fi
     fi
 
     # Single prompt execution
@@ -462,6 +469,11 @@ main() {
             --system)
                 system_file="$2"
                 shift 2
+                ;;
+            --deterministic)
+                DETERMINISTIC_MODE=true
+                temperature="0.0"
+                shift
                 ;;
             *)
                 echo "[WARN] Unknown option: $1" >&2
