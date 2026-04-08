@@ -20,31 +20,37 @@ history_add() {
     local role="$2"
     local content="$3"
     
-    # Use Python for safe JSON manipulation
-    python3 -c "
+    # Use stdin and arguments to avoid command injection
+    echo "$content" | python3 - "$history_file" "$role" "$MAX_HISTORY_LENGTH" << 'PYTHON_EOF'
 import json, sys
-with open('$history_file', 'r') as f:
+history_file = sys.argv[1]
+role = sys.argv[2]
+max_length = int(sys.argv[3])
+content = sys.stdin.read()
+
+with open(history_file, 'r') as f:
     history = json.load(f)
-history.append({'role': '$role', 'content': '''$content'''})
+history.append({'role': role, 'content': content})
 # Trim if too long
-if len(history) > $MAX_HISTORY_LENGTH:
-    history = history[-$MAX_HISTORY_LENGTH:]
-with open('$history_file', 'w') as f:
+if len(history) > max_length:
+    history = history[-max_length:]
+with open(history_file, 'w') as f:
     json.dump(history, f, indent=2)
-" 2>/dev/null || return 1
+PYTHON_EOF
 }
 
 history_get_messages() {
     local history_file="$1"
-    python3 -c "
+    python3 - "$history_file" << 'PYTHON_EOF'
 import json, sys
 try:
-    with open('$history_file', 'r') as f:
+    history_file = sys.argv[1]
+    with open(history_file, 'r') as f:
         history = json.load(f)
     print(json.dumps(history))
 except:
     print('[]')
-" 2>/dev/null || echo '[]'
+PYTHON_EOF
 }
 
 history_clear() {
@@ -54,16 +60,18 @@ history_clear() {
 
 history_length() {
     local history_file="$1"
-    python3 -c "
+    python3 - "$history_file" << 'PYTHON_EOF'
 import json, sys
 try:
-    with open('$history_file', 'r') as f:
+    history_file = sys.argv[1]
+    with open(history_file, 'r') as f:
         history = json.load(f)
     print(len(history))
 except:
     print(0)
-" 2>/dev/null || echo "0"
+PYTHON_EOF
 }
+
 # Python-assisted JSON dump (bulletproof)
 history_dump_as_json_array() {
     local history_file="$1"
@@ -74,22 +82,23 @@ history_dump_as_json_array() {
     fi
     
     # Use Python for safe JSON handling
-    python3 -c "
+    python3 - "$history_file" << 'PYTHON_EOF'
 import json, sys
 try:
-    with open('$history_file', 'r') as f:
+    history_file = sys.argv[1]
+    with open(history_file, 'r') as f:
         history = json.load(f)
     print(json.dumps(history))
 except json.JSONDecodeError:
     print('[]')
 except Exception as e:
-    print(f'[]')
-    sys.stderr.write(f'[ERROR] Failed to read history: {e}\\n')
-" 2>/dev/null || echo '[]'
+    print('[]')
+    sys.stderr.write(f'[ERROR] Failed to read history: {e}\n')
+PYTHON_EOF
 }
 
 # Get messages for API (with optional trimming)
-history_get_messages() {
+history_get_messages_trimmed() {
     local history_file="$1"
     local max_messages="${2:-$MAX_HISTORY_LENGTH}"
     
@@ -101,43 +110,23 @@ history_get_messages() {
         return
     fi
     
-    # Trim to max_messages using Python
-    python3 -c "
+    # Trim to max_messages using Python with stdin to avoid command injection
+    echo "$all_messages" | python3 - "$max_messages" << 'PYTHON_EOF'
 import json, sys
 try:
-    messages = json.loads('''$all_messages''')
-    if len(messages) > $max_messages:
+    messages = json.loads(sys.stdin.read())
+    max_messages = int(sys.argv[1])
+    if len(messages) > max_messages:
         # Keep system message if present
         if messages and messages[0].get('role') == 'system':
-            trimmed = [messages[0]] + messages[-(($max_messages)-1):]
+            trimmed = [messages[0]] + messages[-(max_messages-1):]
         else:
-            trimmed = messages[-$max_messages:]
+            trimmed = messages[-max_messages:]
         print(json.dumps(trimmed))
     else:
         print(json.dumps(messages))
 except Exception as e:
     print('[]')
-    sys.stderr.write(f'[ERROR] Failed to trim messages: {e}\\n')
-" 2>/dev/null || echo "$all_messages"
-}
-
-# Clear history file
-history_clear() {
-    local history_file="$1"
-    echo '[]' > "$history_file"
-}
-
-# Get history length
-history_length() {
-    local history_file="$1"
-    
-    python3 -c "
-import json, sys
-try:
-    with open('$history_file', 'r') as f:
-        history = json.load(f)
-    print(len(history))
-except:
-    print(0)
-" 2>/dev/null || echo "0"
+    sys.stderr.write(f'[ERROR] Failed to trim messages: {e}\n')
+PYTHON_EOF
 }

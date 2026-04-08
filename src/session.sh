@@ -41,28 +41,33 @@ session_load() {
         return 1
     fi
     
-    # Extract messages from session
-    python3 -c "
+    # Extract messages from session using stdin to avoid command injection
+    python3 - "$session_file" << 'PYTHON_EOF'
 import json, sys
 try:
-    with open('$session_file', 'r') as f:
+    session_file = sys.argv[1]
+    with open(session_file, 'r') as f:
         session = json.load(f)
     messages = json.dumps(session.get('messages', []))
     print(messages)
 except Exception as e:
-    print(f'[]')
-    sys.stderr.write(f'[ERROR] Failed to load session: {e}\\n')
-" 2>/dev/null || echo '[]'
+    print('[]')
+    sys.stderr.write(f'[ERROR] Failed to load session: {e}\n')
+PYTHON_EOF
 }
 
 session_save() {
     local session_file="$1"
     local messages_json="$2"
+    local timestamp
+    timestamp=$(date -Iseconds)
     
-    python3 -c "
+    # Use stdin and arguments to avoid command injection
+    echo "$messages_json" | python3 - "$session_file" "$timestamp" << 'PYTHON_EOF'
 import json, sys
-session_file = '$session_file'
-messages = '''$messages_json'''
+session_file = sys.argv[1]
+timestamp = sys.argv[2]
+messages = sys.stdin.read()
 
 try:
     # Load existing session
@@ -71,7 +76,7 @@ try:
     
     # Update messages
     session['messages'] = json.loads(messages) if messages.strip() else []
-    session['metadata']['updated'] = '$(date -Iseconds)'
+    session['metadata']['updated'] = timestamp
     
     # Save
     with open(session_file, 'w') as f:
@@ -81,7 +86,7 @@ try:
 except Exception as e:
     print(f'Failed to save session: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>/dev/null || return 1
+PYTHON_EOF
 }
 
 session_list() {
@@ -97,20 +102,22 @@ session_list() {
         [[ -f "$session_file" ]] || continue
         
         local session_info
-        session_info=$(python3 -c "
+        session_info=$(python3 - "$session_file" << 'PYTHON_EOF'
 import json, os, sys
 try:
-    with open('$session_file', 'r') as f:
+    session_file = sys.argv[1]
+    with open(session_file, 'r') as f:
         session = json.load(f)
     meta = session.get('metadata', {})
-    name = meta.get('name', os.path.basename('$session_file'))
+    name = meta.get('name', os.path.basename(session_file))
     created = meta.get('created', 'unknown')
     model = meta.get('model', 'unknown')
     msg_count = len(session.get('messages', []))
     print(f'{name:30s} | {model:25s} | {msg_count:3d} msgs | {created[:10]}')
 except:
-    print(f'$session_file (corrupted)')
-" 2>/dev/null)
+    print(f'{session_file} (corrupted)')
+PYTHON_EOF
+)
         
         echo "$session_info"
         ((count++))
@@ -137,10 +144,10 @@ session_cleanup() {
     
     echo "Cleaning up sessions older than $max_age_days days..."
     
-    python3 -c "
+    python3 - "$SESSION_DIR" "$max_age_days" << 'PYTHON_EOF'
 import os, json, datetime, sys
-session_dir = '$SESSION_DIR'
-max_days = $max_age_days
+session_dir = sys.argv[1]
+max_days = int(sys.argv[2])
 
 if not os.path.exists(session_dir):
     print('No session directory')
@@ -176,5 +183,5 @@ for filename in os.listdir(session_dir):
         print(f'Error processing {filename}: {e}')
 
 print(f'Cleanup complete: {deleted} sessions deleted')
-" 2>/dev/null
+PYTHON_EOF
 }
