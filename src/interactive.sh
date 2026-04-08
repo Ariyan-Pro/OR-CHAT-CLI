@@ -51,10 +51,11 @@ start_interactive() {
                 ;;
             "/history")
                 echo "=== Conversation History ==="
-                python3 -c "
+                python3 - "$session_file" << 'PYTHON_EOF'
 import json, sys
 try:
-    with open('$session_file', 'r') as f:
+    session_file = sys.argv[1]
+    with open(session_file, 'r') as f:
         history = json.load(f)
     for i, msg in enumerate(history):
         role = msg.get('role', 'unknown')
@@ -62,7 +63,7 @@ try:
         print(f'{i:2d}. {role:10s}: {content}')
 except Exception as e:
     print(f'Error reading history: {e}')
-" 2>/dev/null || echo "Could not read history"
+PYTHON_EOF
                 echo "==========================="
                 continue
                 ;;
