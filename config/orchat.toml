@@ -7,7 +7,7 @@ version = "0.3.0"
 
 [api]
 api_base = "https://api.openrouter.ai/api/v1"
-api_key = "sk-or-v1-your-api-key-here-replace-with-actual-key"
+api_key = "${ORCHAT_API_KEY:-sk-or-v1-your-api-key-here}"
 timeout_seconds = 30
 retry_attempts = 3
 
