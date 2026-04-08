@@ -5,6 +5,18 @@ supports_multiturn = true
 description = "OpenRouter CLI with Phase 3 advanced features"
 version = "0.3.0"
 
+[api]
+api_base = "https://api.openrouter.ai/api/v1"
+api_key = "sk-or-v1-your-api-key-here-replace-with-actual-key"
+timeout_seconds = 30
+retry_attempts = 3
+
+[model]
+default_model = "openai/gpt-3.5-turbo"
+fallback_models = ["openai/gpt-3.5-turbo-16k", "google/gemma-7b-it"]
+temperature = 0.7
+max_tokens = 1000
+
 [defaults]
 model = "openai/gpt-3.5-turbo"
 temperature = 0.7
