@@ -64,7 +64,8 @@ config_load() {
 config_get() {
     local key="$1"
     local default="${2:-}"
-    local var_name="ORCHAT_$(echo "$key" | tr '[:lower:]' '[:upper:]')"
+    # Convert dots to underscores for valid bash variable names
+    local var_name="ORCHAT_$(echo "$key" | tr '[:lower:]' '[:upper:]' | tr '.' '_')"
     
     if [[ -n "${!var_name:-}" ]]; then
         echo "${!var_name}"
@@ -92,7 +93,9 @@ config_set() {
     fi
     
     chmod 600 "$CONFIG_FILE" 2>/dev/null || true
-    export "ORCHAT_$(echo "$key" | tr '[:lower:]' '[:upper:]')"="$value"
+    # Convert dots to underscores for valid bash variable names
+    local var_name="ORCHAT_$(echo "$key" | tr '[:lower:]' '[:upper:]' | tr '.' '_')"
+    export "$var_name"="$value"
     _config_log "INFO" "Set $key = $value"
 }
 
@@ -113,6 +116,42 @@ config_show() {
 config_init() {
     config_load
     return 0
+}
+
+# Handle config subcommands (get, set, list)
+config_handle() {
+    local subcommand="${1:-}"
+    
+    case "$subcommand" in
+        get)
+            local key="${2:-}"
+            if [[ -z "$key" ]]; then
+                echo "[ERROR] Usage: orchat config get <key>" >&2
+                exit 1
+            fi
+            config_get "$key"
+            ;;
+        set)
+            local key="${2:-}"
+            local value="${3:-}"
+            if [[ -z "$key" ]] || [[ -z "$value" ]]; then
+                echo "[ERROR] Usage: orchat config set <key> <value>" >&2
+                exit 1
+            fi
+            config_set "$key" "$value"
+            echo "Configuration updated: $key = $value"
+            ;;
+        list)
+            config_show
+            ;;
+        *)
+            echo "Usage: orchat config <get|set|list>" >&2
+            echo "  get <key>     - Get a configuration value" >&2
+            echo "  set <key> <value> - Set a configuration value" >&2
+            echo "  list          - List all configuration" >&2
+            exit 1
+            ;;
+    esac
 }
 
 # Main execution (if script is run directly)

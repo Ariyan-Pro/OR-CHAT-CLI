@@ -185,3 +185,43 @@ for filename in os.listdir(session_dir):
 print(f'Cleanup complete: {deleted} sessions deleted')
 PYTHON_EOF
 }
+
+# Handle session subcommands (create, list, stats, cleanup)
+session_handle() {
+    local subcommand="${1:-}"
+    
+    case "$subcommand" in
+        create)
+            local name="${2:-}"
+            local system="${3:-}"
+            session_create "$name" "$system"
+            ;;
+        list)
+            session_list
+            ;;
+        stats)
+            echo "Session statistics not yet implemented"
+            ;;
+        cleanup)
+            local max_age="${2:-7}"
+            session_cleanup "$max_age"
+            ;;
+        delete)
+            local name="${2:-}"
+            if [[ -z "$name" ]]; then
+                echo "[ERROR] Usage: orchat session delete <name>" >&2
+                exit 1
+            fi
+            session_delete "$name"
+            ;;
+        *)
+            echo "Usage: orchat session <create|list|stats|cleanup|delete>" >&2
+            echo "  create [name] [system_prompt] - Create a new session" >&2
+            echo "  list                          - List all sessions" >&2
+            echo "  stats                         - Show session statistics" >&2
+            echo "  cleanup [days]                - Clean up old sessions" >&2
+            echo "  delete <name>                 - Delete a specific session" >&2
+            exit 1
+            ;;
+    esac
+}

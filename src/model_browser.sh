@@ -1,6 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Main model_browser function for bootstrap dispatch
+model_browser() {
+    local provider=""
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --provider)
+                provider="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+    
+    if [[ -n "$provider" ]]; then
+        echo "Filtering by provider: $provider"
+        quick_model_list "$provider"
+    else
+        quick_model_list
+    fi
+}
+
 # Interactive model browser with filtering
 browse_models() {
     if [[ -z "${OPENROUTER_API_KEY:-}" ]]; then
