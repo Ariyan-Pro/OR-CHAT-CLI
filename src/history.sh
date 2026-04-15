@@ -4,11 +4,16 @@
 
 HISTORY_DIR="${ORCHAT_HISTORY_DIR:-$HOME/.orchat/sessions}"
 MAX_HISTORY_LENGTH="${MAX_HISTORY_LENGTH:-20}"
-ENCRYPTION_KEY="${ORCHAT_ENCRYPTION_KEY:-}"
-ENCRYPTION_ENABLED="${ORCHAT_ENCRYPTION_ENABLED:-false}"
+
+# Refresh encryption settings from environment (call this before using encryption)
+_refresh_encryption_settings() {
+    ENCRYPTION_KEY="${ORCHAT_ENCRYPTION_KEY:-}"
+    ENCRYPTION_ENABLED="${ORCHAT_ENCRYPTION_ENABLED:-false}"
+}
 
 # Initialize encryption key from environment or generate one
 _init_encryption_key() {
+    _refresh_encryption_settings
     if [[ -z "$ENCRYPTION_KEY" ]]; then
         # Try to load from secure location
         local key_file="$HOME/.orchat/.encryption_key"
@@ -31,6 +36,9 @@ _encrypt_data() {
     local data="$1"
     local key="$2"
     local enabled="${3:-$ENCRYPTION_ENABLED}"
+    
+    # Refresh encryption settings from environment
+    _refresh_encryption_settings
     
     if [[ -z "$key" || "$enabled" != "true" ]]; then
         echo "$data"
@@ -66,6 +74,9 @@ _decrypt_data() {
     local key="$2"
     local enabled="${3:-$ENCRYPTION_ENABLED}"
     
+    # Refresh encryption settings from environment
+    _refresh_encryption_settings
+    
     if [[ -z "$key" || "$enabled" != "true" ]]; then
         echo "$data"
         return 0
@@ -97,7 +108,7 @@ history_init() {
     mkdir -p "$HISTORY_DIR"
     local history_file="$HISTORY_DIR/$session_id.json"
     
-    # Initialize encryption if enabled
+    # Initialize encryption if enabled (refreshes settings and key)
     _init_encryption_key
     
     if [[ ! -f "$history_file" ]]; then
@@ -117,6 +128,9 @@ history_add() {
     local history_file="$1"
     local role="$2"
     local content="$3"
+    
+    # Refresh encryption settings from environment
+    _refresh_encryption_settings
     
     # Decrypt file if encryption is enabled
     local file_content
@@ -167,6 +181,9 @@ PYTHON_EOF
 history_get_messages() {
     local history_file="$1"
     
+    # Refresh encryption settings from environment
+    _refresh_encryption_settings
+    
     # Decrypt file if encryption is enabled
     local file_content
     if [[ "$ENCRYPTION_ENABLED" == "true" && -n "$ENCRYPTION_KEY" ]]; then
@@ -177,10 +194,11 @@ history_get_messages() {
         file_content=$(cat "$history_file")
     fi
     
-    echo "$file_content" | python3 - << 'PYTHON_EOF'
+    # Pass content as argument to avoid stdin issues with heredoc
+    python3 - "$file_content" << 'PYTHON_EOF'
 import json, sys
 try:
-    history = json.loads(sys.stdin.read())
+    history = json.loads(sys.argv[1])
     print(json.dumps(history))
 except:
     print('[]')
@@ -189,6 +207,9 @@ PYTHON_EOF
 
 history_clear() {
     local history_file="$1"
+    
+    # Refresh encryption settings from environment
+    _refresh_encryption_settings
     
     if [[ "$ENCRYPTION_ENABLED" == "true" && -n "$ENCRYPTION_KEY" ]]; then
         # Store encrypted empty array
@@ -203,6 +224,9 @@ history_clear() {
 history_length() {
     local history_file="$1"
     
+    # Refresh encryption settings from environment
+    _refresh_encryption_settings
+    
     # Decrypt file if encryption is enabled
     local file_content
     if [[ "$ENCRYPTION_ENABLED" == "true" && -n "$ENCRYPTION_KEY" ]]; then
@@ -213,10 +237,11 @@ history_length() {
         file_content=$(cat "$history_file")
     fi
     
-    echo "$file_content" | python3 - << 'PYTHON_EOF'
+    # Pass content as argument to avoid stdin issues with heredoc
+    python3 - "$file_content" << 'PYTHON_EOF'
 import json, sys
 try:
-    history = json.loads(sys.stdin.read())
+    history = json.loads(sys.argv[1])
     print(len(history))
 except:
     print(0)
@@ -232,6 +257,9 @@ history_dump_as_json_array() {
         return 1
     fi
     
+    # Refresh encryption settings from environment
+    _refresh_encryption_settings
+    
     # Decrypt file if encryption is enabled
     local file_content
     if [[ "$ENCRYPTION_ENABLED" == "true" && -n "$ENCRYPTION_KEY" ]]; then
@@ -242,11 +270,11 @@ history_dump_as_json_array() {
         file_content=$(cat "$history_file")
     fi
     
-    # Use Python for safe JSON handling
-    echo "$file_content" | python3 - << 'PYTHON_EOF'
+    # Pass content as argument to avoid stdin issues with heredoc
+    python3 - "$file_content" << 'PYTHON_EOF'
 import json, sys
 try:
-    history = json.loads(sys.stdin.read())
+    history = json.loads(sys.argv[1])
     print(json.dumps(history))
 except json.JSONDecodeError:
     print('[]')
@@ -260,6 +288,9 @@ PYTHON_EOF
 history_get_messages_trimmed() {
     local history_file="$1"
     local max_messages="${2:-$MAX_HISTORY_LENGTH}"
+    
+    # Refresh encryption settings from environment
+    _refresh_encryption_settings
     
     local all_messages
     all_messages=$(history_dump_as_json_array "$history_file")
