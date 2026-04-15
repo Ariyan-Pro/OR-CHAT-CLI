@@ -17,6 +17,20 @@ if [[ "$ORCHAT_ROOT" =~ [[:space:]\;\|\&\$\`] ]]; then
 fi
 
 # Load all modules in dependency order with security validation
+# Load enterprise_logger first for logging infrastructure
+enterprise_module="$ORCHAT_ROOT/src/enterprise_logger.sh"
+if [[ -f "$enterprise_module" ]]; then
+    if [[ ! -r "$enterprise_module" ]]; then
+        echo "[ERROR] Enterprise logger module not readable: $enterprise_module" >&2
+        exit 1
+    fi
+    if source "$enterprise_module" 2>/dev/null; then
+        echo "[DEBUG] Loaded module: enterprise_logger" >&2
+    else
+        echo "[WARN] Failed to load enterprise_logger (non-fatal)" >&2
+    fi
+fi
+
 for module in constants utils config env core io interactive streaming model_browser history context payload gemini_integration session workspace; do
     module_file="$ORCHAT_ROOT/src/$module.sh"
 
@@ -28,7 +42,6 @@ for module in constants utils config env core io interactive streaming model_bro
         fi
         
         # Security: Check for world-writable permissions
-        local perms
         perms=$(stat -c "%a" "$module_file" 2>/dev/null || stat -f "%Lp" "$module_file" 2>/dev/null || echo "000")
         if [[ "${perms: -1}" =~ [2367] ]]; then
             echo "[WARN] Module file has insecure permissions: $module_file" >&2
