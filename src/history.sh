@@ -43,17 +43,19 @@ from cryptography.fernet import Fernet
 
 try:
     data = sys.argv[1]
-    key = sys.argv[2].encode()
+    key = sys.argv[2]
     # Ensure key is valid base64-encoded 32-byte key
     import base64
-    if len(key) != 44 or not key.endswith(b'='):
+    if isinstance(key, bytes):
+        key = key.decode('utf-8')
+    if len(key) != 44 or not key.endswith('='):
         # Convert hex key to base64
-        key = base64.urlsafe_b64encode(bytes.fromhex(key[:64]))
-    f = Fernet(key)
+        key = base64.urlsafe_b64encode(bytes.fromhex(key[:64])).decode('utf-8')
+    f = Fernet(key.encode('utf-8'))
     encrypted = f.encrypt(data.encode('utf-8'))
     print(encrypted.decode('utf-8'))
 except Exception as e:
-    sys.stderr.write(f'[ERROR] Encryption failed: {e}\\n')
+    sys.stderr.write(f'[ERROR] Encryption failed: {e}\n')
     print(data)  # Return unencrypted on failure
 PYTHON_EOF
 }
@@ -75,15 +77,17 @@ from cryptography.fernet import Fernet
 
 try:
     data = sys.argv[1]
-    key = sys.argv[2].encode()
+    key = sys.argv[2]
     import base64
-    if len(key) != 44 or not key.endswith(b'='):
-        key = base64.urlsafe_b64encode(bytes.fromhex(key[:64]))
-    f = Fernet(key)
+    if isinstance(key, bytes):
+        key = key.decode('utf-8')
+    if len(key) != 44 or not key.endswith('='):
+        key = base64.urlsafe_b64encode(bytes.fromhex(key[:64])).decode('utf-8')
+    f = Fernet(key.encode('utf-8'))
     decrypted = f.decrypt(data.encode('utf-8'))
     print(decrypted.decode('utf-8'))
 except Exception as e:
-    sys.stderr.write(f'[ERROR] Decryption failed: {e}\\n')
+    sys.stderr.write(f'[ERROR] Decryption failed: {e}\n')
     print(data)  # Return original on failure
 PYTHON_EOF
 }
