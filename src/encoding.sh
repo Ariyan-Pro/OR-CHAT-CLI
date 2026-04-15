@@ -58,11 +58,15 @@ remove_bom() {
 remove_bom_from_string() {
     local content="$1"
     
-    # Check if content starts with BOM
-    if [[ "${content:0:3}" == "$UTF8_BOM" ]]; then
-        echo "${content:3}"
+    # Use printf and od to check for BOM bytes (EF BB BF)
+    local first_bytes
+    first_bytes=$(printf '%s' "$content" | head -c 3 | od -An -tx1 | tr -d ' \n')
+    
+    if [[ "$first_bytes" == "efbbbf" ]]; then
+        # Remove first 3 bytes (BOM) using tail
+        printf '%s' "$content" | tail -c +4
     else
-        echo "$content"
+        printf '%s' "$content"
     fi
 }
 

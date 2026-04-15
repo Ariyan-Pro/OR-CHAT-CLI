@@ -37,8 +37,13 @@ _encrypt_data() {
     local key="$2"
     local enabled="${3:-$ENCRYPTION_ENABLED}"
     
-    # Refresh encryption settings from environment
+    # Refresh encryption settings from environment first
     _refresh_encryption_settings
+    
+    # Use passed 'enabled' parameter, but default to current ENCRYPTION_ENABLED if not provided
+    if [[ -z "${3:-}" ]]; then
+        enabled="$ENCRYPTION_ENABLED"
+    fi
     
     if [[ -z "$key" || "$enabled" != "true" ]]; then
         echo "$data"
@@ -74,8 +79,13 @@ _decrypt_data() {
     local key="$2"
     local enabled="${3:-$ENCRYPTION_ENABLED}"
     
-    # Refresh encryption settings from environment
+    # Refresh encryption settings from environment first
     _refresh_encryption_settings
+    
+    # Use passed 'enabled' parameter, but default to current ENCRYPTION_ENABLED if not provided
+    if [[ -z "${3:-}" ]]; then
+        enabled="$ENCRYPTION_ENABLED"
+    fi
     
     if [[ -z "$key" || "$enabled" != "true" ]]; then
         echo "$data"
