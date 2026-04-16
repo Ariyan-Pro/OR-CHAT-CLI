@@ -9,6 +9,20 @@ SCHEMA_FILE="$CONFIG_DIR/schema.json"
 # Security: Allowed config keys whitelist (strict)
 ALLOWED_CONFIG_KEYS="api.openrouter_api_key api.model api.temperature api.max_tokens api.timeout behavior.stream behavior.verbose paths.data paths.logs"
 
+# Security: Check if a key is in the whitelist
+_config_key_allowed() {
+    local key="$1"
+    local allowed_key
+    
+    for allowed_key in $ALLOWED_CONFIG_KEYS; do
+        if [[ "$key" == "$allowed_key" ]]; then
+            return 0
+        fi
+    done
+    
+    return 1
+}
+
 # Debug logging helper
 _config_log() {
     local level="$1"
@@ -46,6 +60,12 @@ _config_validate_key() {
         return 1
     fi
     
+    
+    # CRITICAL FIX C-002: Enforce strict whitelist of allowed config keys
+    if ! _config_key_allowed "$key"; then
+        _config_log "ERROR" "Config key not in whitelist: $key"
+        return 1
+    fi
     return 0
 }
 

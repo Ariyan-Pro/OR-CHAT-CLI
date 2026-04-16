@@ -7,7 +7,8 @@ version = "0.3.0"
 
 [api]
 api_base = "https://api.openrouter.ai/api/v1"
-api_key = "${ORCHAT_API_KEY:-sk-or-v1-your-api-key-here}"
+# CRITICAL FIX C-003: Remove hardcoded API key pattern - use environment variable only
+api_key = "${ORCHAT_API_KEY}"
 timeout_seconds = 30
 retry_attempts = 3
 
