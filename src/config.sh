@@ -6,8 +6,8 @@ CONFIG_DIR="${ORCHAT_CONFIG_DIR:-$HOME/.config/orchat}"
 CONFIG_FILE="$CONFIG_DIR/config"
 SCHEMA_FILE="$CONFIG_DIR/schema.json"
 
-# Security: Allowed config keys whitelist
-ALLOWED_CONFIG_KEYS="api.openrouter_api_key|api.model|api.temperature|api.max_tokens|api.timeout|behavior.stream|behavior.verbose|paths.data|paths.logs"
+# Security: Allowed config keys whitelist (strict)
+ALLOWED_CONFIG_KEYS="api.openrouter_api_key api.model api.temperature api.max_tokens api.timeout behavior.stream behavior.verbose paths.data paths.logs"
 
 # Debug logging helper
 _config_log() {

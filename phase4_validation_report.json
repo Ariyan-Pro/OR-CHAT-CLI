@@ -2,7 +2,7 @@
   "project": "ORCHAT",
   "phase": 4,
   "phase_title": "Production Hardening & Distribution",
-  "validation_date": "2026-04-08T16:06:47+00:00",
+  "validation_date": "2026-04-16T09:09:14+00:00",
   "deliverables": {
     "Packaging systems": {
       "status": "complete",
@@ -19,7 +19,7 @@
       ]
     },
     "Deterministic mode": {
-      "status": "incomplete",
+      "status": "complete",
       "files": [
         "add_deterministic.sh",
         "test_deterministic.sh"
@@ -34,7 +34,6 @@
   },
   "status": "mostly_complete",
   "remaining_tasks": [
-    "Complete Distribution channels: dist/",
-    "Complete Deterministic mode: test_deterministic.sh"
+    "Complete Distribution channels: dist/"
   ]
 }
