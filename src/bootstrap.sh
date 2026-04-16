@@ -549,21 +549,28 @@ main() {
                         exit 1
                     fi
 
-                    # Security: Check for null bytes or newlines in path
-                    if [[ "$sys_path" == *$'\0'* ]] || [[ "$sys_path" == *$'\n'* ]] || [[ "$sys_path" == *$'\r'* ]]; then
+                    # Security: Check for newlines or carriage returns in path (null bytes cannot exist in bash strings)
+                    if [[ "$sys_path" == *$'\n'* ]] || [[ "$sys_path" == *$'\r'* ]]; then
                         echo "[ERROR] Invalid characters in system file path" >&2
                         exit 1
                     fi
 
-
                     # Security: Check for Windows-style path traversal
-                    if [[ "$sys_path" =~ \.\.\\ ]] || [[ "$sys_path" =~ ^[A-Za-z]: ]]; then
+                    if [[ "$sys_path" =~ \\.\\.\\ ]] || [[ "$sys_path" =~ ^[A-Za-z]: ]]; then
                         echo "[ERROR] Invalid Windows-style path not allowed" >&2
                         exit 1
                     fi
-                    # Check for path traversal attempts (multiple patterns)
-                    if [[ "$sys_path" =~ \.\. ]] || [[ "$sys_path" =~ ^/ ]] || [[ "$sys_path" =~ ^~ ]]; then
-                        echo "[ERROR] Invalid system file path (absolute paths and path traversal not allowed)" >&2
+                    
+                    # CRITICAL FIX C-001: Strict path traversal prevention
+                    # Reject any path containing ".." regardless of context
+                    if [[ "$sys_path" =~ \.\. ]]; then
+                        echo "[ERROR] Path traversal sequences (..) are not allowed" >&2
+                        exit 1
+                    fi
+                    
+                    # Reject absolute paths
+                    if [[ "$sys_path" =~ ^/ ]] || [[ "$sys_path" =~ ^~ ]]; then
+                        echo "[ERROR] Absolute paths are not allowed, use relative paths within ORCHAT_ROOT" >&2
                         exit 1
                     fi
 
@@ -571,15 +578,21 @@ main() {
                     # Remove any leading/trailing whitespace
                     sys_path="$(echo "$sys_path" | xargs)"
                     
-
-                    # Security: Reject paths with multiple consecutive slashes or dots
-                    if [[ "$sys_path" =~ // ]] || [[ "$sys_path" =~ \.\./ ]]; then
+                    # Security: Reject paths with multiple consecutive slashes
+                    if [[ "$sys_path" =~ // ]]; then
                         echo "[ERROR] System file path contains invalid sequence" >&2
                         exit 1
                     fi
-                    # Security: Ensure path only contains safe characters
+                    
+                    # CRITICAL FIX: Ensure path only contains safe characters (alphanumeric, dot, underscore, hyphen, single slash separator)
                     if ! [[ "$sys_path" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
                         echo "[ERROR] System file path contains invalid characters" >&2
+                        exit 1
+                    fi
+                    
+                    # CRITICAL FIX: Ensure no path component starts with a dot (hidden files)
+                    if [[ "$sys_path" =~ (^|/)\.[^./] ]]; then
+                        echo "[ERROR] Hidden files are not allowed" >&2
                         exit 1
                     fi
 
@@ -589,31 +602,42 @@ main() {
                         # Use realpath if available, otherwise construct manually
                         resolved_path="$(cd "$(dirname "$ORCHAT_ROOT/$sys_path")" && pwd)/$(basename "$sys_path")"
                         
-                        # Security: Verify resolved path is within ORCHAT_ROOT
-                        case "$resolved_path" in
-                            "$ORCHAT_ROOT"/*) 
-                                system_file="$resolved_path"
-                                ;;
-                            *)
-                                echo "[ERROR] System file must be within ORCHAT_ROOT directory" >&2
-                                exit 1
-                                ;;
-                        esac
-                    elif [[ -f "$sys_path" ]]; then
-                        # Allow relative paths from current directory if they don't traverse
-                        resolved_path="$(cd "$(dirname "$sys_path")" && pwd)/$(basename "$sys_path")"
+                        # CRITICAL FIX C-001: Verify resolved path is strictly within ORCHAT_ROOT using prefix matching
+                        if [[ "$resolved_path" != "$ORCHAT_ROOT"/* ]]; then
+                            echo "[ERROR] System file must be within ORCHAT_ROOT directory" >&2
+                            exit 1
+                        fi
                         
-                        # Security: Verify the resolved path doesn't escape allowed directories
-                        case "$resolved_path" in
-                            "$ORCHAT_ROOT"/*|"$PWD"/*)
-                                if [[ "$resolved_path" =~ \.\. ]]; then
-                                    echo "[ERROR] System file path traversal detected" >&2
+                        # Additional verification: ensure the path doesn't contain any traversal after resolution
+                        if [[ "$resolved_path" =~ \.\. ]]; then
+                            echo "[ERROR] Resolved path contains traversal sequences" >&2
+                            exit 1
+                        fi
+                        
+                        system_file="$resolved_path"
+                    elif [[ -f "$sys_path" ]] && [[ "$sys_path" != /* ]] && [[ "$sys_path" != ~* ]]; then
+                        # Allow relative paths from current directory ONLY if they don't traverse and are within allowed dirs
+                        local cwd_resolved
+                        cwd_resolved="$(cd "$(dirname "$sys_path")" 2>/dev/null && pwd)/$(basename "$sys_path")" || {
+                            echo "[ERROR] Cannot resolve system file path" >&2
+                            exit 1
+                        }
+                        
+                        # CRITICAL FIX: Only allow if within ORCHAT_ROOT or current working directory
+                        case "$cwd_resolved" in
+                            "$ORCHAT_ROOT"/*)
+                                system_file="$cwd_resolved"
+                                ;;
+                            "$PWD"/*)
+                                # Verify it's truly within PWD and doesn't escape
+                                if [[ "$cwd_resolved" != "$PWD"/* ]]; then
+                                    echo "[ERROR] System file outside allowed directories" >&2
                                     exit 1
                                 fi
-                                system_file="$resolved_path"
+                                system_file="$cwd_resolved"
                                 ;;
                             *)
-                                echo "[ERROR] System file outside allowed directories" >&2
+                                echo "[ERROR] System file must be within ORCHAT_ROOT or current directory" >&2
                                 exit 1
                                 ;;
                         esac
