@@ -16,6 +16,11 @@ if [[ "$ORCHAT_ROOT" =~ [[:space:]\;\|\&\$\`] ]]; then
     exit 1
 fi
 
+# Security: Maximum input length constants
+MAX_INPUT_LENGTH=100000
+MAX_SYSTEM_FILE_SIZE=102400
+MAX_CONFIG_VALUE_LENGTH=4096
+
 # Load all modules in dependency order with security validation
 # Load enterprise_logger first for logging infrastructure
 enterprise_module="$ORCHAT_ROOT/src/enterprise_logger.sh"
@@ -471,6 +476,12 @@ main() {
 
     # Single prompt execution
     local prompt="$1"
+
+    # Security: Validate prompt length (enforce maximum input size)
+    if [[ ${#prompt} -gt "$MAX_INPUT_LENGTH" ]]; then
+        echo "[ERROR] Prompt too large (max $MAX_INPUT_LENGTH chars, got ${#prompt})" >&2
+        exit 1
+    fi
     shift
 
     # Parse remaining options
@@ -544,6 +555,12 @@ main() {
                         exit 1
                     fi
 
+
+                    # Security: Check for Windows-style path traversal
+                    if [[ "$sys_path" =~ \.\.\\ ]] || [[ "$sys_path" =~ ^[A-Za-z]: ]]; then
+                        echo "[ERROR] Invalid Windows-style path not allowed" >&2
+                        exit 1
+                    fi
                     # Check for path traversal attempts (multiple patterns)
                     if [[ "$sys_path" =~ \.\. ]] || [[ "$sys_path" =~ ^/ ]] || [[ "$sys_path" =~ ^~ ]]; then
                         echo "[ERROR] Invalid system file path (absolute paths and path traversal not allowed)" >&2
@@ -554,6 +571,12 @@ main() {
                     # Remove any leading/trailing whitespace
                     sys_path="$(echo "$sys_path" | xargs)"
                     
+
+                    # Security: Reject paths with multiple consecutive slashes or dots
+                    if [[ "$sys_path" =~ // ]] || [[ "$sys_path" =~ \.\./ ]]; then
+                        echo "[ERROR] System file path contains invalid sequence" >&2
+                        exit 1
+                    fi
                     # Security: Ensure path only contains safe characters
                     if ! [[ "$sys_path" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
                         echo "[ERROR] System file path contains invalid characters" >&2
@@ -650,13 +673,18 @@ main() {
             echo "[ERROR] Failed to read system file" >&2
             exit 1
         }
-        
-        # Security: Validate content doesn't contain null bytes
+        # Security: Validate content does not contain null bytes
         if [[ "$system_content" == *$'\0'* ]]; then
             echo "[ERROR] System file contains invalid null bytes" >&2
             exit 1
         fi
-        
+
+        # Security: Validate system content length (use constant)
+        if [[ ${#system_content} -gt "$MAX_INPUT_LENGTH" ]]; then
+            echo "[ERROR] System file content too large (max $MAX_INPUT_LENGTH chars)" >&2
+            exit 1
+        fi
+
         messages_json=$(build_message_stack "$system_content" "$prompt" "[]")
     else
         messages_json='[{"role": "user", "content": "'"$prompt"'"}]'
