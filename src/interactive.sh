@@ -114,7 +114,7 @@ PYTHON_EOF
             if [[ -n "$payload" ]]; then
                 # Create temp file for response
                 local response_file
-                response_file=$(mktemp)
+                response_file=$(mktemp "${TMPDIR:-/tmp}/orchat_response.XXXXXX") || { echo "[ERROR] Failed to create temp file" && return 7; }
                 
                 # Make API call and capture response
                 curl --no-buffer -sS -X POST "$ORCHAT_API_URL" \
