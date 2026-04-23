@@ -698,7 +698,8 @@ main() {
             exit 1
         }
         # Security: Validate content does not contain null bytes
-        if [[ "$system_content" == *$'\0'* ]]; then
+        # Note: Bash cannot store null bytes in variables, so we check the file directly
+        if od -An -tx1 "$system_file" | grep -q ' 00'; then
             echo "[ERROR] System file contains invalid null bytes" >&2
             exit 1
         fi
