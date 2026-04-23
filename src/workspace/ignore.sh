@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ignore.sh - Load and apply ignore rules
 # 50+ years: Zero surprises, deterministic filtering
 

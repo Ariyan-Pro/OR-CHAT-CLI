@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # read.sh - Safe file reading with limits
 # 50+ years: Never read more than you need
 

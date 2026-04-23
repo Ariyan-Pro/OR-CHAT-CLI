@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # document.sh - Intelligent documentation generation
 # 50+ years: Documentation should explain why, not just what
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # assist.sh - AI-powered code assistance
 # 50+ years: Augment, don't replace, human intelligence
 
