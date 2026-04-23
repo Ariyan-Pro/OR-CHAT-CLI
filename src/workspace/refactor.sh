@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # refactor.sh - Architecture-preserving code refactoring
 # 50+ years: Refactor like a surgeon, not a butcher
 

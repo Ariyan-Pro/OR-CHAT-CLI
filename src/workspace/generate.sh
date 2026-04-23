@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # generate.sh - Intelligent code generation
 # 50+ years: Generate code that looks like you wrote it
 

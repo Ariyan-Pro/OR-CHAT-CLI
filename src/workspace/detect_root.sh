@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # detect_root.sh - Find project root and type
 # 50+ years: No guessing, no bullshit
 

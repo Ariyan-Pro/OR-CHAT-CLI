@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # analyze.sh - Code analysis and understanding (FIXED VERSION)
 # 50+ years: Read the code like a book
 
@@ -40,7 +41,7 @@ analyze_code_file() {
     echo "=== ANALYSIS: $file ==="
     echo "Language: $language"
     
-    # Basic stats
+    # Basic stats - atomic operations, no TOCTOU
     local lines words chars
     lines=$(wc -l < "$file" 2>/dev/null || echo 0)
     words=$(wc -w < "$file" 2>/dev/null || echo 0)

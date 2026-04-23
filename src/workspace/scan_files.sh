@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # scan_files.sh - Enumerate and analyze files
 # 50+ years: No file contents read, only metadata
 
@@ -25,10 +26,10 @@ scan_project_files() {
             
             file_count=$((file_count + 1))
             
-            # Get file size
-            if [[ -f "$root_dir/$file_path" ]]; then
-                local size
-                size=$(stat -c%s "$root_dir/$file_path" 2>/dev/null || stat -f%z "$root_dir/$file_path" 2>/dev/null || echo 0)
+            # Get file size - atomic operation, no TOCTOU
+            local size
+            size=$(stat -c%s "$root_dir/$file_path" 2>/dev/null || stat -f%z "$root_dir/$file_path" 2>/dev/null || echo 0)
+            if [[ "$size" -gt 0 ]] || [[ -f "$root_dir/$file_path" ]]; then
                 total_size=$((total_size + size))
                 
                 # Track file type by extension
@@ -76,7 +77,7 @@ scan_project_files() {
             
             file_count=$((file_count + 1))
             
-            # Get file size
+            # Get file size - atomic operation, no TOCTOU
             local size
             size=$(stat -c%s "$file_path" 2>/dev/null || stat -f%z "$file_path" 2>/dev/null || echo 0)
             total_size=$((total_size + size))

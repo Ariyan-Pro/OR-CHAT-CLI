@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # context.sh - Manage file reading context
 # 50+ years: Context is everything
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # summarize.sh - Produce human-readable project snapshot
 # 50+ years: Deterministic output, no LLM, no bullshit
 
