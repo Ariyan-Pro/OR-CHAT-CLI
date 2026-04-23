@@ -35,8 +35,16 @@ browse_models() {
     
     echo "🌐 Fetching models from OpenRouter..."
     
-    # Fetch models
-    models_json="/tmp/orchat_models_$$.json"
+    # Fetch models - use secure temp file to prevent symlink attacks
+    local models_json
+    models_json=$(mktemp "${TMPDIR:-/tmp}/orchat_models.XXXXXX.json") || {
+        echo "[ERROR] Failed to create temporary file" >&2
+        return 7
+    }
+    
+    # Ensure cleanup on exit
+    trap 'rm -f "$models_json"' RETURN EXIT
+    
     curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" \
          "https://openrouter.ai/api/v1/models" > "$models_json"
     
@@ -132,11 +140,23 @@ quick_model_list() {
         echo "Set API key first with: orchat --setup"
         return 1
     fi
+
+    # Use secure temp file to prevent symlink attacks
+    local models_json
+    models_json=$(mktemp "${TMPDIR:-/tmp}/orchat_models.XXXXXX.json") || {
+        echo "[ERROR] Failed to create temporary file" >&2
+        return 7
+    }
     
-    models=$(curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" \
-        "https://openrouter.ai/api/v1/models" | \
-        jq -r '.data[0:10][] | "\(.id) (\(.context_length) ctx)"' 2>/dev/null)
+    # Ensure cleanup on exit
+    trap 'rm -f "$models_json"' RETURN EXIT
+
+    curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+        "https://openrouter.ai/api/v1/models" > "$models_json"
     
+    local models
+    models=$(jq -r '.data[0:10][] | "\(.id) (\(.context_length) ctx)"' "$models_json" 2>/dev/null)
+
     if [[ -n "$models" ]]; then
         echo "=== TOP 10 MODELS ==="
         echo "$models"
