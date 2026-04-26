@@ -25,7 +25,18 @@ start_interactive() {
     
     # Load system prompt if provided
     local system_prompt=""
-    if [[ -n "$system_file" ]] && [[ -f "$system_file" ]]; then
+    if [[ -n "$system_file" ]]; then
+        # Security: Check for symlinks
+        if [[ -L "$system_file" ]]; then
+            echo "[WARN] Symlinks are not permitted for security reasons" >&2
+            return 1
+        fi
+        
+        if [[ ! -f "$system_file" ]]; then
+            echo "[ERROR] System file is not a regular file" >&2
+            return 1
+        fi
+        
         system_prompt=$(<"$system_file")
         echo "Loaded system prompt from: $system_file"
     fi

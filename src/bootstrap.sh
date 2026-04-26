@@ -687,6 +687,11 @@ main() {
         fi
         
         # Security: Verify file is a regular file (not symlink to device, etc.)
+        if [[ -L "$system_file" ]]; then
+            echo "[WARN] Symlinks are not permitted for security reasons" >&2
+            exit ${E_CONFIG_INVALID:-17}
+        fi
+        
         if [[ ! -f "$system_file" ]]; then
             echo "[ERROR] System file is not a regular file" >&2
             exit ${E_CONFIG_INVALID:-17}

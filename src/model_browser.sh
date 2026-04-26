@@ -29,7 +29,7 @@ model_browser() {
 # Interactive model browser with filtering
 browse_models() {
     if [[ -z "${OPENROUTER_API_KEY:-}" ]]; then
-        echo "No API key set. Use --setup first."
+        echo "[WARN] API key not configured. Please set the required environment variable." >&2
         return 1
     fi
     
@@ -137,7 +137,7 @@ browse_models() {
 # Quick model list (non-interactive)
 quick_model_list() {
     if [[ -z "${OPENROUTER_API_KEY:-}" ]]; then
-        echo "Set API key first with: orchat --setup"
+        echo "[WARN] API key not configured. Please set the required environment variable." >&2
         return 1
     fi
 
