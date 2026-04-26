@@ -433,11 +433,26 @@ log_duration() {
 }
 
 # Conditional logging
+# SECURITY NOTE: condition parameter should only contain safe boolean expressions
+# Usage: log_if '[[ $DEBUG == true ]]' INFO "message"
 log_if() {
     local condition="$1"
     local level="$2"
     shift 2
     local message="$*"
+    
+    # Validate condition contains only safe characters (alphanumeric, spaces, brackets, operators, $ for variables)
+    # Allow: letters, numbers, spaces, tabs, brackets, =, !, &, |, quotes, hyphens, underscores, dollar signs
+    if [[ ! "$condition" =~ ^[[:space:]a-zA-Z0-9_\[\]\=\!\&\|\'\"\$\-\>\<\#\*\?]+$ ]]; then
+        _log_entry "ERROR" "7" "[SECURITY] Invalid condition format in log_if"
+        return 1
+    fi
+    
+    # Additional check: reject dangerous patterns
+    if [[ "$condition" =~ [\`\;\(\)] ]] || [[ "$condition" =~ \$\( ]] || [[ "$condition" =~ \`.*\` ]]; then
+        _log_entry "ERROR" "7" "[SECURITY] Dangerous pattern detected in log_if condition"
+        return 1
+    fi
     
     if eval "$condition"; then
         local level_num
