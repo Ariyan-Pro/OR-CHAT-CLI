@@ -13,7 +13,7 @@ export ORCHAT_ROOT
 # Security: Validate ORCHAT_ROOT doesn't contain dangerous characters
 if [[ "$ORCHAT_ROOT" =~ [[:space:]\;\|\&\$\`] ]]; then
     echo "[ERROR] Invalid characters in ORCHAT_ROOT path" >&2
-    exit 1
+    exit ${E_CONFIG_INVALID:-17}
 fi
 
 # Security: Maximum input length constants
@@ -27,7 +27,7 @@ enterprise_module="$ORCHAT_ROOT/src/enterprise_logger.sh"
 if [[ -f "$enterprise_module" ]]; then
     if [[ ! -r "$enterprise_module" ]]; then
         echo "[ERROR] Enterprise logger module not readable: $enterprise_module" >&2
-        exit 1
+        exit ${E_CONFIG_INVALID:-17}
     fi
     if source "$enterprise_module" 2>/dev/null; then
         echo "[DEBUG] Loaded module: enterprise_logger" >&2
@@ -43,7 +43,7 @@ for module in constants utils config env core io interactive streaming model_bro
         # Security: Verify file is readable and not world-writable
         if [[ ! -r "$module_file" ]]; then
             echo "[ERROR] Module file not readable: $module_file" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         
         # Security: Check for world-writable permissions
@@ -57,7 +57,7 @@ for module in constants utils config env core io interactive streaming model_bro
             echo "[DEBUG] Loaded module: $module" >&2
         else
             echo "[ERROR] Failed to load module: $module" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
     else
         echo "[WARN] Module file not found: $module_file" >&2
@@ -133,7 +133,7 @@ main() {
             start_interactive "$@"
         else
             echo "[ERROR] Interactive module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -145,7 +145,7 @@ main() {
             workspace_read "$@"
         else
             echo "[ERROR] File reading module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -157,7 +157,7 @@ main() {
             workspace_analyze "$@"
         else
             echo "[ERROR] Code analysis module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -169,7 +169,7 @@ main() {
             workspace_summarize "$@"
         else
             echo "[ERROR] Code summarization not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -181,7 +181,7 @@ main() {
             workspace_assist "$@"
         else
             echo "[ERROR] AI assistance module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -193,7 +193,7 @@ main() {
             workspace_suggest "$@"
         else
             echo "[ERROR] Code suggestions not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -205,7 +205,7 @@ main() {
             workspace_review "$@"
         else
             echo "[ERROR] Code review not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -217,7 +217,7 @@ main() {
             workspace_generate "$@"
         else
             echo "[ERROR] Code generation not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -229,7 +229,7 @@ main() {
             workspace_generate_context "$@"
         else
             echo "[ERROR] Code context generation not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -241,7 +241,7 @@ main() {
             workspace_generate_tests "$@"
         else
             echo "[ERROR] Test generation not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -253,7 +253,7 @@ main() {
             workspace_refactor_analyze "$@"
         else
             echo "[ERROR] Refactoring analysis not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -265,7 +265,7 @@ main() {
             workspace_refactor_suggest "$@"
         else
             echo "[ERROR] Refactoring suggestions not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -277,7 +277,7 @@ main() {
             workspace_document_file "$@"
         else
             echo "[ERROR] Documentation generation not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -289,7 +289,7 @@ main() {
             workspace_package_deb "$@"
         else
             echo "[ERROR] Enterprise packaging not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -301,7 +301,7 @@ main() {
             workspace_package_docker "$@"
         else
             echo "[ERROR] Docker packaging not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -313,7 +313,7 @@ main() {
             workspace_package_installer "$@"
         else
             echo "[ERROR] Installer generation not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -325,7 +325,7 @@ main() {
             workspace_metrics_init "$@"
         else
             echo "[ERROR] Metrics module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -337,7 +337,7 @@ main() {
             workspace_metrics_prometheus "$@"
         else
             echo "[ERROR] Metrics module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -349,7 +349,7 @@ main() {
             workspace_health_check "$@"
         else
             echo "[ERROR] Health check not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -361,7 +361,7 @@ main() {
             workspace_enterprise "$@"
         else
             echo "[ERROR] Enterprise module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -373,7 +373,7 @@ main() {
             workspace_document_readme "$@"
         else
             echo "[ERROR] README generation not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -385,7 +385,7 @@ main() {
             workspace_explain "$@"
         else
             echo "[ERROR] Code explanation not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -397,7 +397,7 @@ main() {
             workspace_understand "$@"
         else
             echo "[ERROR] Code understanding not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -409,7 +409,7 @@ main() {
             workspace_context "$@"
         else
             echo "[ERROR] Context module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -421,7 +421,7 @@ main() {
             workspace_status "$@"
         else
             echo "[ERROR] Workspace module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -433,7 +433,7 @@ main() {
             workspace_status "$@"
         else
             echo "[ERROR] Workspace module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -445,7 +445,7 @@ main() {
             config_handle "$@"
         else
             echo "[ERROR] Config module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -457,7 +457,7 @@ main() {
             model_browser "$@"
         else
             echo "[ERROR] Model browser not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -469,7 +469,7 @@ main() {
             session_handle "$@"
         else
             echo "[ERROR] Session module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         return
     fi
@@ -480,7 +480,7 @@ main() {
     # Security: Validate prompt length (enforce maximum input size)
     if [[ ${#prompt} -gt "$MAX_INPUT_LENGTH" ]]; then
         echo "[ERROR] Prompt too large (max $MAX_INPUT_LENGTH chars, got ${#prompt})" >&2
-        exit 1
+        exit ${E_CONFIG_INVALID:-17}
     fi
     shift
 
@@ -507,7 +507,7 @@ main() {
                     shift 2
                 else
                     echo "[ERROR] --model requires a value" >&2
-                    exit 1
+                    exit ${E_CONFIG_INVALID:-17}
                 fi
                 ;;
             --temp|--temperature)
@@ -515,13 +515,13 @@ main() {
                     # Security: Validate temperature range (0.0 to 2.0)
                     if ! [[ "$2" =~ ^[0-9]+\.?[0-9]*$ ]] || (( $(echo "$2 < 0 || $2 > 2" | bc -l 2>/dev/null || echo 1) )); then
                         echo "[ERROR] Temperature must be between 0.0 and 2.0" >&2
-                        exit 1
+                        exit ${E_CONFIG_INVALID:-17}
                     fi
                     temperature="$2"
                     shift 2
                 else
                     echo "[ERROR] --temperature requires a value" >&2
-                    exit 1
+                    exit ${E_CONFIG_INVALID:-17}
                 fi
                 ;;
             --tokens|--max-tokens)
@@ -529,13 +529,13 @@ main() {
                     # Security: Validate max_tokens is positive integer
                     if ! [[ "$2" =~ ^[0-9]+$ ]] || [[ "$2" -le 0 ]] || [[ "$2" -gt 100000 ]]; then
                         echo "[ERROR] max-tokens must be a positive integer (1-100000)" >&2
-                        exit 1
+                        exit ${E_CONFIG_INVALID:-17}
                     fi
                     max_tokens="$2"
                     shift 2
                 else
                     echo "[ERROR] --max-tokens requires a value" >&2
-                    exit 1
+                    exit ${E_CONFIG_INVALID:-17}
                 fi
                 ;;
             --system)
@@ -546,32 +546,32 @@ main() {
                     # Security: Check for empty path
                     if [[ -z "$sys_path" ]]; then
                         echo "[ERROR] System file path cannot be empty" >&2
-                        exit 1
+                        exit ${E_CONFIG_INVALID:-17}
                     fi
 
                     # Security: Check for newlines or carriage returns in path (null bytes cannot exist in bash strings)
                     if [[ "$sys_path" == *$'\n'* ]] || [[ "$sys_path" == *$'\r'* ]]; then
                         echo "[ERROR] Invalid characters in system file path" >&2
-                        exit 1
+                        exit ${E_CONFIG_INVALID:-17}
                     fi
 
                     # Security: Check for Windows-style path traversal
                     if [[ "$sys_path" =~ \\.\\.\\ ]] || [[ "$sys_path" =~ ^[A-Za-z]: ]]; then
                         echo "[ERROR] Invalid Windows-style path not allowed" >&2
-                        exit 1
+                        exit ${E_CONFIG_INVALID:-17}
                     fi
                     
                     # CRITICAL FIX C-001: Strict path traversal prevention
                     # Reject any path containing ".." regardless of context
                     if [[ "$sys_path" =~ \.\. ]]; then
                         echo "[ERROR] Path traversal sequences (..) are not allowed" >&2
-                        exit 1
+                        exit ${E_CONFIG_INVALID:-17}
                     fi
                     
                     # Reject absolute paths
                     if [[ "$sys_path" =~ ^/ ]] || [[ "$sys_path" =~ ^~ ]]; then
                         echo "[ERROR] Absolute paths are not allowed, use relative paths within ORCHAT_ROOT" >&2
-                        exit 1
+                        exit ${E_CONFIG_INVALID:-17}
                     fi
 
                     # Security: Normalize and validate path doesn't escape allowed directories
@@ -581,19 +581,19 @@ main() {
                     # Security: Reject paths with multiple consecutive slashes
                     if [[ "$sys_path" =~ // ]]; then
                         echo "[ERROR] System file path contains invalid sequence" >&2
-                        exit 1
+                        exit ${E_CONFIG_INVALID:-17}
                     fi
                     
                     # CRITICAL FIX: Ensure path only contains safe characters (alphanumeric, dot, underscore, hyphen, single slash separator)
                     if ! [[ "$sys_path" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
                         echo "[ERROR] System file path contains invalid characters" >&2
-                        exit 1
+                        exit ${E_CONFIG_INVALID:-17}
                     fi
                     
                     # CRITICAL FIX: Ensure no path component starts with a dot (hidden files)
                     if [[ "$sys_path" =~ (^|/)\.[^./] ]]; then
                         echo "[ERROR] Hidden files are not allowed" >&2
-                        exit 1
+                        exit ${E_CONFIG_INVALID:-17}
                     fi
 
                     # Resolve to absolute path within ORCHAT_ROOT
@@ -605,13 +605,13 @@ main() {
                         # CRITICAL FIX C-001: Verify resolved path is strictly within ORCHAT_ROOT using prefix matching
                         if [[ "$resolved_path" != "$ORCHAT_ROOT"/* ]]; then
                             echo "[ERROR] System file must be within ORCHAT_ROOT directory" >&2
-                            exit 1
+                            exit ${E_CONFIG_INVALID:-17}
                         fi
                         
                         # Additional verification: ensure the path doesn't contain any traversal after resolution
                         if [[ "$resolved_path" =~ \.\. ]]; then
                             echo "[ERROR] Resolved path contains traversal sequences" >&2
-                            exit 1
+                            exit ${E_CONFIG_INVALID:-17}
                         fi
                         
                         system_file="$resolved_path"
@@ -620,7 +620,7 @@ main() {
                         local cwd_resolved
                         cwd_resolved="$(cd "$(dirname "$sys_path")" 2>/dev/null && pwd)/$(basename "$sys_path")" || {
                             echo "[ERROR] Cannot resolve system file path" >&2
-                            exit 1
+                            exit ${E_CONFIG_INVALID:-17}
                         }
                         
                         # CRITICAL FIX: Only allow if within ORCHAT_ROOT or current working directory
@@ -632,23 +632,23 @@ main() {
                                 # Verify it's truly within PWD and doesn't escape
                                 if [[ "$cwd_resolved" != "$PWD"/* ]]; then
                                     echo "[ERROR] System file outside allowed directories" >&2
-                                    exit 1
+                                    exit ${E_CONFIG_INVALID:-17}
                                 fi
                                 system_file="$cwd_resolved"
                                 ;;
                             *)
                                 echo "[ERROR] System file must be within ORCHAT_ROOT or current directory" >&2
-                                exit 1
+                                exit ${E_CONFIG_INVALID:-17}
                                 ;;
                         esac
                     else
                         echo "[ERROR] System file not found: $sys_path" >&2
-                        exit 1
+                        exit ${E_CONFIG_INVALID:-17}
                     fi
                     shift 2
                 else
                     echo "[ERROR] --system requires a file path" >&2
-                    exit 1
+                    exit ${E_CONFIG_INVALID:-17}
                 fi
                 ;;
             --deterministic)
@@ -675,7 +675,7 @@ main() {
         # Security: Additional validation before reading file
         if [[ ! -r "$system_file" ]]; then
             echo "[ERROR] System file not readable: $system_file" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         
         # Security: Check file size (limit to 100KB)
@@ -683,31 +683,31 @@ main() {
         file_size=$(stat -c%s "$system_file" 2>/dev/null || stat -f%z "$system_file" 2>/dev/null || echo "0")
         if [[ "$file_size" -gt 102400 ]]; then
             echo "[ERROR] System file too large (max 100KB): $file_size bytes" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         
         # Security: Verify file is a regular file (not symlink to device, etc.)
         if [[ ! -f "$system_file" ]]; then
             echo "[ERROR] System file is not a regular file" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
         
         # Security: Read file content safely
         system_content=$(cat "$system_file" 2>/dev/null) || {
             echo "[ERROR] Failed to read system file" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         }
         # Security: Validate content does not contain null bytes
         # Note: Bash cannot store null bytes in variables, so we check the file directly
         if od -An -tx1 "$system_file" | grep -q ' 00'; then
             echo "[ERROR] System file contains invalid null bytes" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
 
         # Security: Validate system content length (use constant)
         if [[ ${#system_content} -gt "$MAX_INPUT_LENGTH" ]]; then
             echo "[ERROR] System file content too large (max $MAX_INPUT_LENGTH chars)" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
 
         messages_json=$(build_message_stack "$system_content" "$prompt" "[]")
@@ -730,14 +730,14 @@ main() {
             run_orchat_stream "$payload"
         else
             echo "[ERROR] Streaming not available" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
     else
         if type run_orchat &>/dev/null; then
             run_orchat "$payload"
         else
             echo "[ERROR] Core API module not loaded" >&2
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
         fi
     fi
 }

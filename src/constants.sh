@@ -7,6 +7,10 @@ DEFAULT_HISTORY_FILE="$HOME/.orchat_history"
 DEFAULT_CONFIG_FILE="$HOME/.orchatrc"
 VERSION="1.0.4"
 
+# Export exit codes for use in other modules
+export E_OK=0 E_INPUT_EMPTY=8 E_INPUT_INVALID=10 E_CONFIG_MISSING=16 E_CONFIG_INVALID=17
+export E_AUTH_MISSING=24 E_NET_TIMEOUT=32 E_API_UNAVAILABLE=40
+
 # ============================================================================
 # FULL POSIX EXIT CODE RANGE (0-255)
 # Enterprise-grade error handling with comprehensive exit codes
