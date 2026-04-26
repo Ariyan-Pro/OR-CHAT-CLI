@@ -195,6 +195,7 @@ config_show() {
     else
         echo "# ORCHAT Configuration"
         echo "# No configuration file found at $CONFIG_FILE"
+        echo "# (This is example/commented code showing the config format)"
         echo "#"
         echo "# To set API key:"
         echo "# orchat config set api.openrouter_api_key 'your-key-here'"
