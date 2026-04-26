@@ -21,7 +21,9 @@ workspace_status() {
     
     echo "$summary"
     echo ""
-    echo "[DEBUG] Workspace analysis completed in ${duration_ms}ms"
+    if [[ "${ORCHAT_DEBUG:-}" == "1" ]]; then
+        echo "[DEBUG] Workspace analysis completed in ${duration_ms}ms" >&2
+    fi
 }
 
 # If called directly, run status

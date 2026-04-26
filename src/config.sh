@@ -216,7 +216,7 @@ config_handle() {
             local key="${2:-}"
             if [[ -z "$key" ]]; then
                 echo "[ERROR] Usage: orchat config get <key>" >&2
-                exit 1
+                return ${E_CONFIG_MISSING:-16}
             fi
             config_get "$key"
             ;;
@@ -225,7 +225,7 @@ config_handle() {
             local value="${3:-}"
             if [[ -z "$key" ]] || [[ -z "$value" ]]; then
                 echo "[ERROR] Usage: orchat config set <key> <value>" >&2
-                exit 1
+                return ${E_CONFIG_INVALID:-17}
             fi
             config_set "$key" "$value"
             echo "Configuration updated: $key = $value"
@@ -238,7 +238,7 @@ config_handle() {
             echo "  get <key>     - Get a configuration value" >&2
             echo "  set <key> <value> - Set a configuration value" >&2
             echo "  list          - List all configuration" >&2
-            exit 1
+            return ${E_CONFIG_INVALID:-17}
             ;;
     esac
 }
@@ -253,7 +253,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         init) config_init ;;
         *) 
             echo "Usage: $0 {load|get|set|show|init}"
-            exit 1
+            exit ${E_CONFIG_INVALID:-17}
             ;;
     esac
 else

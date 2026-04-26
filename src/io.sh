@@ -37,10 +37,12 @@ clean_json_output() {
         fi
     fi
     
-    # If parsing failed, show raw for debugging
-    echo "[DEBUG] Raw response:" >&2
-    echo "$response" | head -c 200 >&2
-    echo "" >&2
+    # If parsing failed, show raw for debugging (only if ORCHAT_DEBUG=1)
+    if [[ "${ORCHAT_DEBUG:-}" == "1" ]]; then
+        echo "[DEBUG] Raw response:" >&2
+        echo "$response" | head -c 200 >&2
+        echo "" >&2
+    fi
     echo "[ERROR] Could not parse API response" >&2
     return 1
 }
