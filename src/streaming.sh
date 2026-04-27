@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 # Robust SSE/chunk handler with Python validation
 handle_stream_chunks() {

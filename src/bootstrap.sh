@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # ORCHAT Bootstrap - Phase 8 Security Hardened
-set -euo pipefail
 
-# Security: Enable strict mode
-set -o nounset
-set -o pipefail
+# Security: Enable strict mode but handle errors gracefully
+set -eo pipefail
 
 # Determine root directory
 ORCHAT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

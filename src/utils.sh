@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 log_debug() { [[ "${ORCHAT_DEBUG:-}" == "1" ]] && echo "[DEBUG] $*" >&2; }
 log_error() { echo "[ERROR] $*" >&2; }

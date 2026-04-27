@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 CURL_OPTS=(-sS --fail --show-error --max-time 30)
 

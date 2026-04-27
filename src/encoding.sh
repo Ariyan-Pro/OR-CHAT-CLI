@@ -2,7 +2,7 @@
 # UTF-8 BOM Detection and CRLF Normalization
 # Handles encoding issues in input files and user input
 
-set -euo pipefail
+set -eo pipefail
 
 # UTF-8 BOM bytes (EF BB BF)
 UTF8_BOM=$'\xef\xbb\xbf'
