@@ -198,7 +198,7 @@ config_show() {
         echo "# (This is example/commented code showing the config format)"
         echo "#"
         echo "# To set API key:"
-        echo "# orchat config set api.openrouter_api_key 'your-key-here'"
+        echo "# orchat config set api.openrouter_api_key '<YOUR_API_KEY_HERE>'"
     fi
 }
 

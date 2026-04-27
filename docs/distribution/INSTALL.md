@@ -55,15 +55,15 @@ Configuration
 API Key Setup
 bash
 # Method 1: Environment variable
-export OPENROUTER_API_KEY="your-key-here"
+export OPENROUTER_API_KEY="<YOUR_API_KEY_HERE>"
 
 # Method 2: Config file
-echo "your-key-here" > ~/.config/orchat/config
+echo "<YOUR_API_KEY_HERE>" > ~/.config/orchat/config
 
 # Method 3: Secure storage (recommended)
 mkdir -p ~/.config/orchat
 chmod 700 ~/.config/orchat
-echo "get_api_key() { echo 'your-key-here'; }" > ~/.config/orchat/secure_key.sh
+echo "get_api_key() { echo '<YOUR_API_KEY_HERE>'; }" > ~/.config/orchat/secure_key.sh
 chmod 500 ~/.config/orchat/secure_key.sh
 Verification
 bash

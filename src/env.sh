@@ -18,8 +18,8 @@ validate_api_key() {
             echo "[ERROR] OpenRouter API key not set!" >&2
             echo "" >&2
             echo "Set it with:" >&2
-            echo "  export OPENROUTER_API_KEY='your-key-here'" >&2
-            echo "  orchat --set-key 'your-key-here'" >&2
+            echo "  export OPENROUTER_API_KEY='<YOUR_API_KEY_HERE>'" >&2
+            echo "  orchat --set-key '<YOUR_API_KEY_HERE>'" >&2
             echo "  orchat --setup (for guided setup)" >&2
             echo "" >&2
             echo "Get a key from: https://openrouter.ai/keys" >&2
