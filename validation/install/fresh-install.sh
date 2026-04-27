@@ -168,7 +168,7 @@ MOCK_BINARY
 # Copy to ~/.config/orchat/config and edit
 
 [api]
-# openrouter_api_key = "your-key-here"
+# openrouter_api_key = "<YOUR_API_KEY_HERE>"
 
 [models]
 # default = "openai/gpt-4"

@@ -36,11 +36,11 @@ source ~/.bashrc
 3. API Key Configuration
 bash
 # Method 1: Environment variable
-export OPENROUTER_API_KEY="sk-or-your-key-here"
+export OPENROUTER_API_KEY="sk-or-<YOUR_API_KEY_HERE>"
 
 # Method 2: Config file
 mkdir -p ~/.config/orchat
-echo "sk-or-your-key-here" > ~/.config/orchat/config
+echo "sk-or-<YOUR_API_KEY_HERE>" > ~/.config/orchat/config
 chmod 600 ~/.config/orchat/config
 
 # Method 3: Interactive setup
