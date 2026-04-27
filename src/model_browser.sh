@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 # Main model_browser function for bootstrap dispatch
 model_browser() {

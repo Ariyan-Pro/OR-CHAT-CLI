@@ -1,10 +1,1 @@
-```
-# Backup files
-*.backup.*
-
-# Environment files
-.env.local
-
-# Logs
-*.log
-```
+Nothing should be ignored since the changes only include shell script source files (.sh) and no build artifacts, dependencies, or temporary files.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 start_interactive() {
     local hist_file="${1:-${RESOLVED_HISTORY_FILE:-$HOME/.orchat_history}}"
