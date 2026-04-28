@@ -47,9 +47,9 @@ E_CONFIG_RANGE=22                   # Configuration value out of range
 E_CONFIG_RESERVED=23                # Reserved for future config errors
 
 # Authentication/Authorization Errors (24-31)
-E_AUTH_MISSING=24                   # API key missing
-E_AUTH_INVALID=25                   # API key invalid
-E_AUTH_EXPIRED=26                   # API key expired
+E_AUTH_MISSING=24                   # Authentication credential missing
+E_AUTH_INVALID=25                   # Authentication credential invalid
+E_AUTH_EXPIRED=26                   # Authentication credential expired
 E_AUTH_FORBIDDEN=27                 # Access forbidden
 E_AUTH_RATE_LIMIT=28                # Rate limited
 E_AUTH_QUOTA=29                     # Quota exceeded

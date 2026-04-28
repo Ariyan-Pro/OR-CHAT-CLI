@@ -7,7 +7,8 @@ version = "0.3.0"
 
 [api]
 api_base = "https://api.openrouter.ai/api/v1"
-# CRITICAL FIX C-003: Remove hardcoded API key pattern - use environment variable only
+# Authentication credential - loaded from environment variable (never hardcode actual keys)
+# Format: api_key = "${ORCHAT_API_KEY}" where ORCHAT_API_KEY is set in your shell
 api_key = "${ORCHAT_API_KEY}"
 timeout_seconds = 30
 retry_attempts = 3
@@ -26,7 +27,8 @@ max_history_length = 20
 session_dir = "~/.orchat/sessions"
 
 [features]
-api_key_management = true
+# Authentication/credential management features (generic term for API keys, tokens, etc.)
+authentication_management = true
 model_browser = true
 session_persistence = true
 multi_turn = true

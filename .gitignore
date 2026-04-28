@@ -1,1 +1,13 @@
-(COMPREHENSIVE_SECURITY_AUDIT_FINAL.md is just a markdown document, no build artifacts, dependencies, or temp files in the changes)
+```
+# Logs and temp files
+*.log
+*.tmp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Original rules preserved
+*.log
+```

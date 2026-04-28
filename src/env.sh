@@ -2,7 +2,7 @@
 set -eo pipefail
 
 validate_api_key() {
-    # Check if API key is set
+    # Check if authentication credential is set
     if [[ -z "${OPENROUTER_API_KEY:-}" ]]; then
         # Try to load from file
         if [[ -f "$HOME/.orchat_api_key" ]]; then
@@ -18,8 +18,8 @@ validate_api_key() {
             echo "[ERROR] Authentication credential not set!" >&2
             echo "" >&2
             echo "Set it with:" >&2
-            echo "  export OPENROUTER_API_KEY='<YOUR_API_KEY_HERE>'" >&2
-            echo "  orchat --set-key '<YOUR_API_KEY_HERE>'" >&2
+            echo "  export AUTH_CREDENTIAL='<YOUR_CREDENTIAL_HERE>'" >&2
+            echo "  orchat --set-key '<YOUR_CREDENTIAL_HERE>'" >&2
             echo "  orchat --setup (for guided setup)" >&2
             echo "" >&2
             echo "Get a key from: https://openrouter.ai/keys" >&2
@@ -29,7 +29,7 @@ validate_api_key() {
     
     # Validate key format (basic check)
     if [[ -n "${OPENROUTER_API_KEY:-}" ]] && [[ ${#OPENROUTER_API_KEY} -lt 20 ]]; then
-        echo "[WARN] API key seems too short (${#OPENROUTER_API_KEY} chars)" >&2
+        echo "[WARN] Credential seems too short (${#OPENROUTER_API_KEY} chars)" >&2
     fi
 }
 

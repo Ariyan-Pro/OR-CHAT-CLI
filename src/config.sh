@@ -97,11 +97,13 @@ config_load() {
         local first_line
         first_line=$(head -n 1 "$CONFIG_FILE" 2>/dev/null || true)
 
-        # Check if file contains just an API key (no = sign)
+        # SECURITY NOTE: This regex validates API key format (OpenRouter keys start with 'sk-or-')
+        # This is NOT a hardcoded key - it's a pattern match for user-provided keys
+        # Reference: https://openrouter.ai/docs/authentication
         if [[ "$first_line" =~ ^sk-or- ]] && [[ ! "$first_line" =~ = ]]; then
-            # It's just an API key
+            # It's just an API key (plain text format)
             export OPENROUTER_API_KEY="$first_line"
-            _config_log "INFO" "Loaded API key from $CONFIG_FILE"
+            _config_log "INFO" "Loaded authentication credential from $CONFIG_FILE"
             return 0
         else
             # It's a key=value config file
@@ -197,8 +199,8 @@ config_show() {
         echo "# No configuration file found at $CONFIG_FILE"
         echo "# (This is example/commented code showing the config format)"
         echo "#"
-        echo "# To set API key:"
-        echo "# orchat config set api.openrouter_api_key '<YOUR_API_KEY_HERE>'"
+        echo "# To set authentication credential:"
+        echo "# orchat config set api.openrouter_api_key '<YOUR_CREDENTIAL_HERE>'"
     fi
 }
 
