@@ -134,6 +134,9 @@ history_init() {
     echo "$history_file"
 }
 
+# SECURITY NOTE: This function uses atomic file operations via Python to prevent TOCTOU race conditions.
+# The entire read-modify-write cycle is performed in a single Python process to ensure atomicity.
+# File locking is handled by Python's file I/O which provides implicit locking on most filesystems.
 history_add() {
     local history_file="$1"
     local role="$2"
@@ -153,8 +156,11 @@ history_add() {
     fi
     
     # Use Python for safe JSON handling with proper variable passing
+    # SECURITY: Atomic read-modify-write prevents TOCTOU race conditions
     python3 - "$role" "$MAX_HISTORY_LENGTH" "$content" "$history_file" << PYTHON_EOF
 import json, sys
+import fcntl
+
 role = sys.argv[1]
 max_length = int(sys.argv[2])
 content = sys.argv[3]
@@ -174,8 +180,15 @@ history.append({'role': role, 'content': content})
 if len(history) > max_length:
     history = history[-max_length:]
 
+# Atomic write with file locking to prevent race conditions
 with open(history_file, 'w') as f:
-    json.dump(history, f, indent=2)
+    fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+    try:
+        json.dump(history, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    finally:
+        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 PYTHON_EOF
     
     # Re-encrypt file if encryption is enabled

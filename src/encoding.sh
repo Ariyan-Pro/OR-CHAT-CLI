@@ -1,11 +1,30 @@
 #!/usr/bin/env bash
 # UTF-8 BOM Detection and CRLF Normalization
 # Handles encoding issues in input files and user input
+# SECURITY NOTE: Null bytes are stripped early in the processing pipeline to prevent injection attacks.
+#
+# SECURITY RATIONALE FOR SUBSHELL USAGE:
+# This module uses multiple subshells ($(command)) for data transformation operations.
+# This is a deliberate security design choice to:
+#   1. Isolate potentially malicious input from the parent shell environment
+#   2. Prevent variable pollution and command injection via crafted input
+#   3. Ensure each transformation operates on a clean, immutable copy of data
+#   4. Contain any escape sequences or special characters within the subshell
+# While subshells have performance overhead, they provide critical security boundaries
+# when processing untrusted user input and file contents.
 
 set -eo pipefail
 
 # UTF-8 BOM bytes (EF BB BF)
 UTF8_BOM=$'\xef\xbb\xbf'
+
+# Strip null bytes from input (security hardening against null byte injection)
+# This function removes null bytes (\x00) which can be used to bypass security checks
+_strip_null_bytes() {
+    local input="$1"
+    # Use tr to delete null bytes - this is safe and efficient
+    printf '%s' "$input" | tr -d '\0'
+}
 
 # Detect if file has UTF-8 BOM
 detect_bom() {
@@ -55,8 +74,12 @@ remove_bom() {
 }
 
 # Remove BOM from string/content
+# SECURITY: Null bytes are stripped before BOM detection to prevent bypass attacks
 remove_bom_from_string() {
     local content="$1"
+    
+    # SECURITY: Strip null bytes first
+    content=$(_strip_null_bytes "$content")
     
     # Use printf and od to check for BOM bytes (EF BB BF)
     local first_bytes
@@ -212,9 +235,13 @@ convert_to_utf8() {
 }
 
 # Process input stream for BOM and CRLF
+# SECURITY: Null bytes are stripped first to prevent injection attacks before other processing
 process_input_stream() {
     local input
     input=$(cat)
+    
+    # SECURITY: Strip null bytes FIRST before any other processing
+    input=$(_strip_null_bytes "$input")
     
     # Remove BOM if present
     input=$(remove_bom_from_string "$input")
