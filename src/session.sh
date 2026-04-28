@@ -14,10 +14,25 @@ session_create() {
         session_name="session_$(date +%Y%m%d_%H%M%S)"
     fi
     
+    # Sanitize session name to prevent path traversal
+    session_name=$(echo "$session_name" | tr -cd '[:alnum:]_-')
+    
+    if [[ -z "$session_name" ]]; then
+        echo "[ERROR] Invalid session name" >&2
+        return 1
+    fi
+    
     local session_file="$SESSION_DIR/$session_name.json"
     
-    # Create session file
-    cat > "$session_file" << SESSION_EOF
+    # Use atomic file creation with mktemp to prevent TOCTOU race conditions
+    local temp_file
+    temp_file=$(mktemp "${SESSION_DIR}/.session.XXXXXX.json") || {
+        echo "[ERROR] Failed to create session file" >&2
+        return 1
+    }
+    
+    # Create session content in temp file first
+    cat > "$temp_file" << SESSION_EOF
 {
   "metadata": {
     "name": "$session_name",
@@ -30,14 +45,49 @@ session_create() {
 }
 SESSION_EOF
     
+    # Atomically move temp file to final location
+    if ! mv "$temp_file" "$session_file" 2>/dev/null; then
+        rm -f "$temp_file"
+        echo "[ERROR] Failed to save session" >&2
+        return 1
+    fi
+    
     echo "$session_file"
 }
 
 session_load() {
     local session_file="$1"
     
+    # Validate session file path - must be a filename only (no path components)
+    if [[ "$session_file" =~ / ]]; then
+        echo "[ERROR] Invalid session file path" >&2
+        return 1
+    fi
+    
+    # Construct full path within SESSION_DIR
+    session_file="$SESSION_DIR/$session_file.json"
+    
+    # Verify file exists and is within SESSION_DIR
+    local real_session_dir
+    real_session_dir=$(cd "$SESSION_DIR" 2>/dev/null && pwd -P) || {
+        echo "[ERROR] Session directory not accessible" >&2
+        return 1
+    }
+    
     if [[ ! -f "$session_file" ]]; then
-        echo "[ERROR] Session file not found: $session_file" >&2
+        echo "[ERROR] Session file not found" >&2
+        return 1
+    fi
+    
+    # Get realpath to verify it's in the correct directory
+    local real_file_path
+    real_file_path=$(readlink -f "$session_file" 2>/dev/null) || {
+        echo "[ERROR] Cannot resolve session file path" >&2
+        return 1
+    }
+    
+    if [[ ! "$real_file_path" =~ ^"$real_session_dir"/ ]]; then
+        echo "[ERROR] Security violation: session file outside allowed directory" >&2
         return 1
     fi
     
@@ -52,7 +102,7 @@ try:
     print(messages)
 except Exception as e:
     print('[]')
-    sys.stderr.write(f'[ERROR] Failed to load session: {e}\n')
+    sys.stderr.write('[ERROR] Failed to load session\n')
 PYTHON_EOF
 }
 
@@ -62,27 +112,55 @@ session_save() {
     local timestamp
     timestamp=$(date -Iseconds)
     
+    # Validate session file path to prevent path traversal
+    if [[ ! "$session_file" =~ ^[^/]+$ ]] && [[ ! "$session_file" =~ \.json$ ]]; then
+        echo "[ERROR] Invalid session file path" >&2
+        return 1
+    fi
+    
+    # Use atomic file operations with mktemp to prevent TOCTOU race conditions
+    local temp_file
+    temp_file=$(mktemp "${SESSION_DIR}/.session_save.XXXXXX.json") || {
+        echo "[ERROR] Failed to create temporary file" >&2
+        return 1
+    }
+    
+    # Ensure cleanup on failure
+    trap 'rm -f "$temp_file"' RETURN
+    
+    # Copy existing session to temp file first
+    if [[ -f "$session_file" ]]; then
+        cp "$session_file" "$temp_file" || {
+            echo "[ERROR] Failed to read session file" >&2
+            return 1
+        }
+    fi
+    
     # Use stdin and arguments to avoid command injection
-    echo "$messages_json" | python3 - "$session_file" "$timestamp" << 'PYTHON_EOF'
+    echo "$messages_json" | python3 - "$temp_file" "$timestamp" "$session_file" << 'PYTHON_EOF'
 import json, sys
-session_file = sys.argv[1]
+temp_file = sys.argv[1]
 timestamp = sys.argv[2]
+final_file = sys.argv[3]
 messages = sys.stdin.read()
 
 try:
-    # Load existing session
-    with open(session_file, 'r') as f:
+    # Load existing session from temp file
+    with open(temp_file, 'r') as f:
         session = json.load(f)
     
     # Update messages
     session['messages'] = json.loads(messages) if messages.strip() else []
     session['metadata']['updated'] = timestamp
     
-    # Save
-    with open(session_file, 'w') as f:
+    # Save to temp file first
+    with open(temp_file, 'w') as f:
         json.dump(session, f, indent=2)
     
-    print('Session saved:', session_file)
+    # Atomically move to final location
+    import os
+    os.rename(temp_file, final_file)
+    print('Session saved:', final_file)
 except Exception as e:
     print(f'Failed to save session: {e}', file=sys.stderr)
     sys.exit(1)
@@ -128,10 +206,39 @@ PYTHON_EOF
 
 session_delete() {
     local session_name="$1"
+    
+    # Sanitize session name to prevent path traversal
+    session_name=$(echo "$session_name" | tr -cd '[:alnum:]_-')
+    
+    if [[ -z "$session_name" ]]; then
+        echo "[ERROR] Invalid session name" >&2
+        return 1
+    fi
+    
     local session_file="$SESSION_DIR/$session_name.json"
     
+    # Verify file exists and is within SESSION_DIR (prevent path traversal)
+    local real_session_dir
+    real_session_dir=$(cd "$SESSION_DIR" 2>/dev/null && pwd -P) || {
+        echo "[ERROR] Session directory not accessible" >&2
+        return 1
+    }
+    
+    # Check if file exists before attempting deletion
     if [[ ! -f "$session_file" ]]; then
         echo "[ERROR] Session not found: $session_name" >&2
+        return 1
+    fi
+    
+    # Get realpath of session file to verify it's in the correct directory
+    local real_file_path
+    real_file_path=$(readlink -f "$session_file" 2>/dev/null) || {
+        echo "[ERROR] Cannot resolve session file path" >&2
+        return 1
+    }
+    
+    if [[ ! "$real_file_path" =~ ^"$real_session_dir"/ ]]; then
+        echo "[ERROR] Security violation: session file outside allowed directory" >&2
         return 1
     fi
     
@@ -209,7 +316,7 @@ session_handle() {
         delete)
             local name="${2:-}"
             if [[ -z "$name" ]]; then
-                echo "[ERROR] Usage: orchat session delete <name>" >&2
+                echo "[ERROR] Usage: session delete requires a name argument" >&2
                 exit 1
             fi
             session_delete "$name"

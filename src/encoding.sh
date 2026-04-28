@@ -51,10 +51,19 @@ detect_bom() {
 # Remove UTF-8 BOM from file
 remove_bom() {
     local file="$1"
-    local temp_file="${file}.tmp.$$"
+    local temp_file
+    
+    # Create secure temp file
+    temp_file=$(mktemp "${TMPDIR:-/tmp}/orchat_bom.XXXXXX") || {
+        echo "[ERROR] Failed to create temporary file" >&2
+        return 1
+    }
+    
+    # Ensure cleanup on exit
+    trap 'rm -f "$temp_file"' RETURN
     
     if [[ ! -f "$file" ]]; then
-        echo "[ERROR] File not found: $file" >&2
+        echo "[ERROR] File not found" >&2
         return 1
     fi
     
@@ -65,7 +74,7 @@ remove_bom() {
         # Skip first 3 bytes (BOM)
         tail -c +4 "$file" > "$temp_file"
         mv "$temp_file" "$file"
-        echo "[INFO] Removed UTF-8 BOM from $file" >&2
+        echo "[INFO] Removed UTF-8 BOM from file" >&2
         return 0
     else
         rm -f "$temp_file"
@@ -124,10 +133,19 @@ detect_line_endings() {
 # Normalize line endings to LF (Unix style)
 normalize_line_endings() {
     local file="$1"
-    local temp_file="${file}.tmp.$$"
+    local temp_file
+    
+    # Create secure temp file
+    temp_file=$(mktemp "${TMPDIR:-/tmp}/orchat_lineend.XXXXXX") || {
+        echo "[ERROR] Failed to create temporary file" >&2
+        return 1
+    }
+    
+    # Ensure cleanup on exit
+    trap 'rm -f "$temp_file"' RETURN
     
     if [[ ! -f "$file" ]]; then
-        echo "[ERROR] File not found: $file" >&2
+        echo "[ERROR] File not found" >&2
         return 1
     fi
     
@@ -139,7 +157,7 @@ normalize_line_endings() {
             # Convert CRLF and CR to LF
             sed 's/\r$//' "$file" | tr '\r' '\n' > "$temp_file"
             mv "$temp_file" "$file"
-            echo "[INFO] Normalized line endings in $file (was: $line_type)" >&2
+            echo "[INFO] Normalized line endings in file (was: $line_type)" >&2
             return 0
             ;;
         lf)
@@ -147,7 +165,7 @@ normalize_line_endings() {
             return 0
             ;;
         *)
-            echo "[WARN] Could not detect line endings for $file" >&2
+            echo "[WARN] Could not detect line endings for file" >&2
             return 1
             ;;
     esac
@@ -167,7 +185,7 @@ normalize_encoding() {
     local changes_made=0
     
     if [[ ! -f "$file" ]]; then
-        echo "[ERROR] File not found: $file" >&2
+        echo "[ERROR] File not found" >&2
         return 1
     fi
     
@@ -188,7 +206,7 @@ normalize_encoding() {
     fi
     
     if [[ $changes_made -eq 1 ]]; then
-        echo "[INFO] Encoding normalized for $file" >&2
+        echo "[INFO] Encoding normalized for file" >&2
     fi
     
     return 0
@@ -199,7 +217,7 @@ validate_utf8() {
     local file="$1"
     
     if [[ ! -f "$file" ]]; then
-        echo "[ERROR] File not found: $file" >&2
+        echo "[ERROR] File not found" >&2
         return 1
     fi
     
@@ -216,20 +234,29 @@ validate_utf8() {
 convert_to_utf8() {
     local file="$1"
     local from_encoding="${2:-ISO-8859-1}"
-    local temp_file="${file}.tmp.$$"
+    local temp_file
+    
+    # Create secure temp file
+    temp_file=$(mktemp "${TMPDIR:-/tmp}/orchat_utf8.XXXXXX") || {
+        echo "[ERROR] Failed to create temporary file" >&2
+        return 1
+    }
+    
+    # Ensure cleanup on exit
+    trap 'rm -f "$temp_file"' RETURN
     
     if [[ ! -f "$file" ]]; then
-        echo "[ERROR] File not found: $file" >&2
+        echo "[ERROR] File not found" >&2
         return 1
     fi
     
     if iconv -f "$from_encoding" -t UTF-8 "$file" > "$temp_file" 2>/dev/null; then
         mv "$temp_file" "$file"
-        echo "[INFO] Converted $file from $from_encoding to UTF-8" >&2
+        echo "[INFO] Converted file to UTF-8" >&2
         return 0
     else
         rm -f "$temp_file"
-        echo "[ERROR] Failed to convert $file to UTF-8" >&2
+        echo "[ERROR] Failed to convert file to UTF-8" >&2
         return 1
     fi
 }
@@ -257,7 +284,7 @@ safe_read_file() {
     local file="$1"
     
     if [[ ! -f "$file" ]]; then
-        echo "[ERROR] File not found: $file" >&2
+        echo "[ERROR] File not found" >&2
         return 1
     fi
     
