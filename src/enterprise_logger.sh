@@ -172,9 +172,18 @@ _format_message() {
 }
 
 # Rotate log file if needed
+# SECURITY NOTE: This function has been updated with file locking to prevent TOCTOU race conditions.
+# The flock mechanism ensures atomic rotation when multiple processes access the same log file.
 _rotate_log() {
     [[ -z "$__LOG_FILE_PATH" ]] && return 0
     [[ ! -f "$__LOG_FILE_PATH" ]] && return 0
+    
+    # Use file descriptor locking to prevent race conditions during size check and rotation
+    exec 200>"$__LOG_FILE_PATH.lock"
+    flock -n 200 || {
+        # Another process is rotating, skip this rotation attempt
+        return 0
+    }
     
     local file_size
     file_size=$(stat -f%z "$__LOG_FILE_PATH" 2>/dev/null || stat -c%s "$__LOG_FILE_PATH" 2>/dev/null || echo 0)
@@ -198,6 +207,10 @@ _rotate_log() {
         ((++__LOG_ROTATION_COUNT))
         log_notice "Log file rotated (rotation #$__LOG_ROTATION_COUNT)"
     fi
+    
+    # Release lock
+    flock -u 200
+    exec 200>&-
 }
 
 #-------------------------------------------------------------------------------
