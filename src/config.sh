@@ -218,7 +218,7 @@ config_handle() {
         get)
             local key="${2:-}"
             if [[ -z "$key" ]]; then
-                echo "[ERROR] Usage: orchat config get <key>" >&2
+                echo "[ERROR] Usage: config get requires a key argument" >&2
                 return ${E_CONFIG_MISSING:-16}
             fi
             config_get "$key"
@@ -227,7 +227,7 @@ config_handle() {
             local key="${2:-}"
             local value="${3:-}"
             if [[ -z "$key" ]] || [[ -z "$value" ]]; then
-                echo "[ERROR] Usage: orchat config set <key> <value>" >&2
+                echo "[ERROR] Usage: config set requires key and value arguments" >&2
                 return ${E_CONFIG_INVALID:-17}
             fi
             config_set "$key" "$value"

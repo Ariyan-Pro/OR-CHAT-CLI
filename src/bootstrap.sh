@@ -24,7 +24,7 @@ MAX_CONFIG_VALUE_LENGTH=4096
 enterprise_module="$ORCHAT_ROOT/src/enterprise_logger.sh"
 if [[ -f "$enterprise_module" ]]; then
     if [[ ! -r "$enterprise_module" ]]; then
-        echo "[ERROR] Enterprise logger module not readable: $enterprise_module" >&2
+        echo "[ERROR] Enterprise logger module not readable" >&2
         exit ${E_CONFIG_INVALID:-17}
     fi
     if source "$enterprise_module" 2>/dev/null; then
@@ -40,14 +40,14 @@ for module in constants utils config env core io interactive streaming model_bro
     if [[ -f "$module_file" ]]; then
         # Security: Verify file is readable and not world-writable
         if [[ ! -r "$module_file" ]]; then
-            echo "[ERROR] Module file not readable: $module_file" >&2
+            echo "[ERROR] Module file not readable" >&2
             exit ${E_CONFIG_INVALID:-17}
         fi
         
         # Security: Check for world-writable permissions
         perms=$(stat -c "%a" "$module_file" 2>/dev/null || stat -f "%Lp" "$module_file" 2>/dev/null || echo "000")
         if [[ "${perms: -1}" =~ [2367] ]]; then
-            echo "[WARN] Module file has insecure permissions: $module_file" >&2
+            echo "[WARN] Module file has insecure permissions" >&2
         fi
         
         # shellcheck source=/dev/null
@@ -58,7 +58,7 @@ for module in constants utils config env core io interactive streaming model_bro
             exit ${E_CONFIG_INVALID:-17}
         fi
     else
-        echo "[WARN] Module file not found: $module_file" >&2
+        echo "[WARN] Module file not found" >&2
     fi
 done
 
@@ -642,7 +642,7 @@ main() {
                                 ;;
                         esac
                     else
-                        echo "[ERROR] System file not found: $sys_path" >&2
+                        echo "[ERROR] System file not found" >&2
                         exit ${E_CONFIG_INVALID:-17}
                     fi
                     shift 2
@@ -674,7 +674,7 @@ main() {
     if [[ -n "$system_file" ]] && [[ -f "$system_file" ]]; then
         # Security: Additional validation before reading file
         if [[ ! -r "$system_file" ]]; then
-            echo "[ERROR] System file not readable: $system_file" >&2
+            echo "[ERROR] System file not readable" >&2
             exit ${E_CONFIG_INVALID:-17}
         fi
         
@@ -682,7 +682,7 @@ main() {
         local file_size
         file_size=$(stat -c%s "$system_file" 2>/dev/null || stat -f%z "$system_file" 2>/dev/null || echo "0")
         if [[ "$file_size" -gt 102400 ]]; then
-            echo "[ERROR] System file too large (max 100KB): $file_size bytes" >&2
+            echo "[ERROR] System file too large (max 100KB)" >&2
             exit ${E_CONFIG_INVALID:-17}
         fi
         

@@ -139,7 +139,7 @@ _http_post() {
         fi
         attempt=$((attempt+1))
         if [[ $attempt -gt $max ]]; then
-            echo "[ERROR] Network/API failure: $resp" >&2
+            echo "[ERROR] Network or API error occurred" >&2
             return 3  # E_NETWORK_FAIL
         fi
         sleep $((2 ** attempt))
@@ -158,12 +158,11 @@ run_orchat() {
     
     response="$(_http_post "$payload")" || exit 3  # E_NETWORK_FAIL
     
-    # Parse and clean response
+    # Parse and clean response - generic error messages only
     if echo "$response" | jq -e '.choices[0].message.content' >/dev/null 2>&1; then
         echo "$response" | jq -r '.choices[0].message.content'
     else
-        echo "[ERROR] API response parsing failed" >&2
-        echo "[ERROR] Response: $response" >&2
+        echo "[ERROR] Failed to process API response" >&2
         return 1
     fi
 }
