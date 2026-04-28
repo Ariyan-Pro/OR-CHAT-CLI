@@ -15,7 +15,7 @@ validate_api_key() {
     if [[ -z "${OPENROUTER_API_KEY:-}" ]]; then
         # In non-interactive mode, we need a key
         if [[ "${1:-}" != "interactive" ]]; then
-            echo "[ERROR] OpenRouter API key not set!" >&2
+            echo "[ERROR] Authentication credential not set!" >&2
             echo "" >&2
             echo "Set it with:" >&2
             echo "  export OPENROUTER_API_KEY='<YOUR_API_KEY_HERE>'" >&2
@@ -23,7 +23,7 @@ validate_api_key() {
             echo "  orchat --setup (for guided setup)" >&2
             echo "" >&2
             echo "Get a key from: https://openrouter.ai/keys" >&2
-            exit 1  # E_KEY_MISSING
+            exit 24  # E_AUTH_MISSING
         fi
     fi
     
