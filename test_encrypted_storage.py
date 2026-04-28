@@ -176,13 +176,11 @@ unset ORCHAT_ENCRYPTION_KEY
 source /workspace/src/history.sh
 hf=$(history_init "disabled_session")
 history_add "$hf" "user" "Unencrypted message"
-raw_content=$(cat "$hf")
-echo "RAW_CONTENT:$raw_content"'''
+cat "$hf"'''
         
         result = subprocess.run(['bash', '-c', script], capture_output=True, text=True)
         
-        lines = result.stdout.split('\n')
-        raw_content = [l for l in lines if l.startswith('RAW_CONTENT:')][0].replace('RAW_CONTENT:', '')
+        raw_content = result.stdout.strip()
         
         try:
             data = json.loads(raw_content)
@@ -194,7 +192,7 @@ echo "RAW_CONTENT:$raw_content"'''
             self.log_result("Disabled encryption", True, "Data stored as plain JSON")
             return True
         else:
-            self.log_result("Disabled encryption", False, "Data not stored as plain JSON")
+            self.log_result("Disabled encryption", False, f"Data not stored as plain JSON. Content: {raw_content[:100]}")
             return False
             
     def run_all_tests(self):
