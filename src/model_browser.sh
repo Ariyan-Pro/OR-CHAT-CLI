@@ -29,7 +29,7 @@ model_browser() {
 # Interactive model browser with filtering
 browse_models() {
     if [[ -z "${OPENROUTER_API_KEY:-}" ]]; then
-        echo "[WARN] API key not configured. Please set the required environment variable." >&2
+        echo "[WARN] Authentication credential not configured. Please set the required environment variable." >&2
         return 1
     fi
     
@@ -49,7 +49,7 @@ browse_models() {
          "https://openrouter.ai/api/v1/models" > "$models_json"
     
     if [[ ! -s "$models_json" ]] || ! jq -e '.data' "$models_json" >/dev/null 2>&1; then
-        echo "Failed to fetch models. Check API key."
+        echo "Failed to fetch models. Check authentication credential."
         rm -f "$models_json"
         return 1
     fi
@@ -137,7 +137,7 @@ browse_models() {
 # Quick model list (non-interactive)
 quick_model_list() {
     if [[ -z "${OPENROUTER_API_KEY:-}" ]]; then
-        echo "[WARN] API key not configured. Please set the required environment variable." >&2
+        echo "[WARN] Authentication credential not configured. Please set the required environment variable." >&2
         return 1
     fi
 

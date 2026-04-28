@@ -152,7 +152,7 @@ run_orchat() {
     
     # Validate we have what we need
     if [ -z "$OPENROUTER_API_KEY" ]; then
-        echo "[ERROR] No API key configured" >&2
+        echo "[ERROR] Authentication credential not configured" >&2
         return 1
     fi
     
@@ -174,7 +174,7 @@ run_orchat_stream() {
     
     # Validate we have what we need
     if [ -z "$OPENROUTER_API_KEY" ]; then
-        echo "[ERROR] No API key configured" >&2
+        echo "[ERROR] Authentication credential not configured" >&2
         return 1
     fi
     
