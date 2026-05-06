@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORCHAT Enterprise CLI — Swiss Watch Precision AI Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-tertiary: #111111;
+            --bg-card: rgba(20, 20, 20, 0.6);
+            --bg-glass: rgba(15, 15, 15, 0.4);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-medium: rgba(255, 255, 255, 0.12);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-tertiary: #666666;
+            --accent-green: #28a745;
+            --accent-blue: #58a6ff;
+            --accent-purple: #8A2BE2;
+            --accent-orange: #ffc107;
+            --gradient-1: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
+            --gradient-2: linear-gradient(135deg, rgba(88, 166, 255, 0.08) 0%, rgba(0, 0, 0, 0) 100%);
+            --shadow-glow: 0 0 40px rgba(40, 167, 69, 0.1);
+            --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            cursor: default;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-medium);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 20% 80%, rgba(40, 167, 69, 0.03) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(88, 166, 255, 0.03) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 40%, rgba(138, 43, 226, 0.02) 0%, transparent 40%);
+            animation: bgFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, 2%) rotate(1deg); }
+            66% { transform: translate(-1%, 1%) rotate(-1deg); }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            transition: var(--transition-smooth);
+        }
+
+        nav.scrolled {
+            padding: 0.75rem 2rem;
+            background: rgba(0, 0, 0, 0.95);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: var(--transition-smooth);
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent-green);
+            transition: var(--transition-smooth);
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8rem 2rem 4rem;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .hero-badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 0.8s ease-out 0.1s both;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            margin-top: 4rem;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .hero-stat {
+            text-align: center;
+        }
+
+        .hero-stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .hero-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.25rem;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* BentoGrid Layout */
+        .section {
+            padding: 6rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: auto auto auto;
+            gap: 1.5rem;
+        }
+
+        .bento-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-smooth);
+            backdrop-filter: blur(20px);
+        }
+
+        .bento-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--gradient-1);
+            opacity: 0;
+            transition: var(--transition-smooth);
+        }
+
+        .bento-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-medium);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .bento-card:hover::before {
+            opacity: 1;
+        }
+
+        .bento-card-large {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+
+        .bento-card-wide {
+            grid-column: span 2;
+        }
+
+        .bento-card-tall {
+            grid-row: span 2;
+        }
+
+        .bento-card-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .bento-card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .bento-card-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            position: relative;
+            z-index: 1;
+        }
+
+        .bento-card-metric {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-subtle);
+            position: relative;
+            z-index: 1;
+        }
+
+        .bento-card-metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .bento-card-metric-label {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            margin-top: 0.25rem;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+            overflow-x: auto;
+            margin-top: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .code-block code {
+            color: var(--text-secondary);
+        }
+
+        .code-block .keyword {
+            color: var(--accent-purple);
+        }
+
+        .code-block .string {
+            color: var(--accent-green);
+        }
+
+        .code-block .comment {
+            color: var(--text-tertiary);
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 0.75rem 0;
+            text-align: left;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .comparison-table th {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .comparison-table td {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .comparison-table td.highlight {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        /* Feature List */
+        .feature-list {
+            list-style: none;
+            margin-top: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .feature-list-icon {
+            color: var(--accent-green);
+            flex-shrink: 0;
+            margin-top: 0.125rem;
+        }
+
+        /* Installation Cards */
+        .install-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .install-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: var(--transition-smooth);
+        }
+
+        .install-card:hover {
+            border-color: var(--border-medium);
+            transform: translateY(-2px);
+        }
+
+        .install-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .install-card-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.125rem;
+        }
+
+        .install-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .install-card-command {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            overflow-x: auto;
+        }
+
+        /* Architecture Diagram */
+        .architecture-diagram {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 3rem;
+            margin-top: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .architecture-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .architecture-node {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            min-width: 140px;
+            transition: var(--transition-smooth);
+        }
+
+        .architecture-node:hover {
+            border-color: var(--accent-green);
+            transform: scale(1.05);
+        }
+
+        .architecture-node-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .architecture-node-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .architecture-arrow {
+            color: var(--text-tertiary);
+            font-size: 1.5rem;
+        }
+
+        /* Logging Levels */
+        .logging-levels {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .logging-level {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        .logging-level-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .logging-level-name {
+            font-weight: 600;
+            min-width: 100px;
+        }
+
+        .logging-level-desc {
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        /* Testimonial/Quote */
+        .quote-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 3rem;
+            text-align: center;
+            margin-top: 3rem;
+            position: relative;
+        }
+
+        .quote-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            font-style: italic;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .quote-author {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* CTA Section */
+        .cta-section {
+            text-align: center;
+            padding: 8rem 2rem;
+            background: linear-gradient(180deg, transparent 0%, rgba(20, 20, 20, 0.5) 100%);
+        }
+
+        .cta-title {
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 3rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: #37c856;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--border-medium);
+            background: var(--bg-card);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 4rem 2rem 2rem;
+            background: var(--bg-secondary);
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 3rem;
+        }
+
+        .footer-brand {
+            max-width: 300px;
+        }
+
+        .footer-brand-logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .footer-brand-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .footer-column h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-links a {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+
+        .footer-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 3rem auto 0;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-copyright {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .footer-social a {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+
+        .footer-social a:hover {
+            border-color: var(--border-medium);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .bento-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .bento-card-large {
+                grid-column: span 2;
+            }
+
+            .bento-card-wide {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .bento-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .bento-card-large,
+            .bento-card-wide,
+            .bento-card-tall {
+                grid-column: span 1;
+                grid-row: span 1;
+            }
+
+            .hero-stats {
+                gap: 2rem;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+
+            .architecture-flow {
+                flex-direction: column;
+            }
+
+            .architecture-arrow {
+                transform: rotate(90deg);
+            }
+        }
+
+        /* Scroll Animation Classes */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .scroll-reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .scroll-delay-1 { transition-delay: 0.1s; }
+        .scroll-delay-2 { transition-delay: 0.2s; }
+        .scroll-delay-3 { transition-delay: 0.3s; }
+        .scroll-delay-4 { transition-delay: 0.4s; }
+
+        /* Mouse Parallax Effect */
+        .parallax-layer {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="bg-animation"></div>
+
+    <!-- Navigation -->
+    <nav id="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <div class="nav-logo-icon">O</div>
+                ORCHAT Enterprise
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#performance">Performance</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#security">Security</a></li>
+                <li><a href="#install">Install</a></li>
+                <li><a href="#docs">Docs</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
+                v1.0.4 OPERATIONAL
+            </div>
+            <h1 class="hero-title">Swiss Watch Precision<br>AI Assistant</h1>
+            <p class="hero-subtitle">
+                3378× smaller, 12.5× faster, military-grade secure. 
+                A production-grade engineering artifact built on 50+ years of experience.
+            </p>
+            
+            <div class="hero-stats">
+                <div class="hero-stat scroll-reveal scroll-delay-1">
+                    <div class="hero-stat-value">14.8KB</div>
+                    <div class="hero-stat-label">Package Size</div>
+                </div>
+                <div class="hero-stat scroll-reveal scroll-delay-2">
+                    <div class="hero-stat-value">0.12s</div>
+                    <div class="hero-stat-label">Cold Start</div>
+                </div>
+                <div class="hero-stat scroll-reveal scroll-delay-3">
+                    <div class="hero-stat-value">348+</div>
+                    <div class="hero-stat-label">AI Models</div>
+                </div>
+                <div class="hero-stat scroll-reveal scroll-delay-4">
+                    <div class="hero-stat-value">13</div>
+                    <div class="hero-stat-label">Log Levels</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features BentoGrid -->
+    <section class="section" id="features">
+        <div class="section-header scroll-reveal">
+            <span class="section-tag">Features</span>
+            <h2 class="section-title">Engineering Excellence</h2>
+            <p class="section-subtitle">
+                Most AI CLI tools are thin wrappers. ORCHAT is a production-grade artifact with military-grade precision.
+            </p>
+        </div>
+
+        <div class="bento-grid">
+            <!-- Large Card - Models -->
+            <div class="bento-card bento-card-large scroll-reveal">
+                <div class="bento-card-icon">🤖</div>
+                <h3 class="bento-card-title">348+ AI Models via OpenRouter</h3>
+                <p class="bento-card-description">
+                    Access GPT-4, Claude, Llama, Mistral, and every frontier model through a single unified interface. 
+                    Switch models per-query with the --model flag. One tool, unlimited intelligence.
+                </p>
+                <div class="code-block">
+                    <code>
+<span class="keyword">orchat</span> --model <span class="string">"anthropic/claude-3-5-sonnet"</span> <span class="string">"Summarize this codebase"</span>
+                    </code>
+                </div>
+                <div class="bento-card-metric">
+                    <div class="bento-card-metric-value">348+</div>
+                    <div class="bento-card-metric-label">Available Models</div>
+                </div>
+            </div>
+
+            <!-- Card - Streaming -->
+            <div class="bento-card scroll-reveal scroll-delay-1">
+                <div class="bento-card-icon">⚡</div>
+                <h3 class="bento-card-title">Real-Time Streaming</h3>
+                <p class="bento-card-description">
+                    Token-by-token output with 12ms streaming latency. Pipe to any Unix tool — grep, sed, jq, tee.
+                </p>
+                <div class="bento-card-metric">
+                    <div class="bento-card-metric-value">12ms</div>
+                    <div class="bento-card-metric-label">Streaming Latency</div>
+                </div>
+            </div>
+
+            <!-- Card - History -->
+            <div class="bento-card scroll-reveal scroll-delay-2">
+                <div class="bento-card-icon">💾</div>
+                <h3 class="bento-card-title">O(1) Persistent History</h3>
+                <p class="bento-card-description">
+                    JSON-based conversation storage with 7-day auto-cleanup, constant-time lookups, encrypted local storage.
+                </p>
+                <div class="bento-card-metric">
+                    <div class="bento-card-metric-value">O(1)</div>
+                    <div class="bento-card-metric-label">Lookup Time</div>
+                </div>
+            </div>
+
+            <!-- Tall Card - Security -->
+            <div class="bento-card bento-card-tall scroll-reveal" id="security">
+                <div class="bento-card-icon">🔐</div>
+                <h3 class="bento-card-title">Military-Grade Key Isolation</h3>
+                <p class="bento-card-description">
+                    API keys never appear in history files, log files, terminal traces, or process listings. Zero exposure by architectural constraint.
+                </p>
+                <ul class="feature-list">
+                    <li>
+                        <span class="feature-list-icon">✓</span>
+                        <span>Never in ~/.orchat_history</span>
+                    </li>
+                    <li>
+                        <span class="feature-list-icon">✓</span>
+                        <span>Never in log files (13 tiers)</span>
+                    </li>
+                    <li>
+                        <span class="feature-list-icon">✓</span>
+                        <span>Never in terminal traces</span>
+                    </li>
+                    <li>
+                        <span class="feature-list-icon">✓</span>
+                        <span>Never in process listings</span>
+                    </li>
+                    <li>
+                        <span class="feature-list-icon">✓</span>
+                        <span>Never in Prometheus metrics</span>
+                    </li>
+                </ul>
+                <div class="bento-card-metric">
+                    <div class="bento-card-metric-value">0</div>
+                    <div class="bento-card-metric-label">Key Exposure Risk</div>
+                </div>
+            </div>
+
+            <!-- Wide Card - Logging -->
+            <div class="bento-card bento-card-wide scroll-reveal scroll-delay-1">
+                <div class="bento-card-icon">📋</div>
+                <h3 class="bento-card-title">13-Level Logging Hierarchy</h3>
+                <p class="bento-card-description">
+                    From QUANTUM (sub-atomic debugging) to BLACKHOLE (complete suppression). Every tier is named, intentional, and production-tested.
+                </p>
+                <div class="logging-levels">
+                    <div class="logging-level">
+                        <div class="logging-level-indicator" style="background: #1a7f37;"></div>
+                        <span class="logging-level-name">QUANTUM</span>
+                        <span class="logging-level-desc">Sub-atomic debugging</span>
+                    </div>
+                    <div class="logging-level">
+                        <div class="logging-level-indicator" style="background: #28a745;"></div>
+                        <span class="logging-level-name">TRACE</span>
+                        <span class="logging-level-desc">Every function call</span>
+                    </div>
+                    <div class="logging-level">
+                        <div class="logging-level-indicator" style="background: #58a6ff;"></div>
+                        <span class="logging-level-name">INFO</span>
+                        <span class="logging-level-desc">Normal operations</span>
+                    </div>
+                    <div class="logging-level">
+                        <div class="logging-level-indicator" style="background: #e36209;"></div>
+                        <span class="logging-level-name">ERROR</span>
+                        <span class="logging-level-desc">Recoverable errors</span>
+                    </div>
+                    <div class="logging-level">
+                        <div class="logging-level-indicator" style="background: #da3633;"></div>
+                        <span class="logging-level-name">EMERGENCY</span>
+                        <span class="logging-level-desc">System unusable</span>
+                    </div>
+                    <div class="logging-level">
+                        <div class="logging-level-indicator" style="background: #30363d;"></div>
+                        <span class="logging-level-name">BLACKHOLE</span>
+                        <span class="logging-level-desc">Complete suppression</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card - Validation -->
+            <div class="bento-card scroll-reveal scroll-delay-2">
+                <div class="bento-card-icon">🛡️</div>
+                <h3 class="bento-card-title">Enterprise Input Validation</h3>
+                <p class="bento-card-description">
+                    8,000 character limit, 10% token safety buffer, UTF-8 BOM detection, CRLF normalization.
+                </p>
+                <div class="bento-card-metric">
+                    <div class="bento-card-metric-value">8K</div>
+                    <div class="bento-card-metric-label">Max Characters</div>
+                </div>
+            </div>
+
+            <!-- Card - Distribution -->
+            <div class="bento-card scroll-reveal scroll-delay-3">
+                <div class="bento-card-icon">☸️</div>
+                <h3 class="bento-card-title">Multi-Platform Distribution</h3>
+                <p class="bento-card-description">
+                    Debian package, Docker image, Homebrew formula, PyPI wheel, WSL2 optimization, HuggingFace Space.
+                </p>
+                <div class="bento-card-metric">
+                    <div class="bento-card-metric-value">7+</div>
+                    <div class="bento-card-metric-label">Distribution Channels</div>
+                </div>
+            </div>
+
+            <!-- Card - Observability -->
+            <div class="bento-card scroll-reveal scroll-delay-4">
+                <div class="bento-card-icon">📡</div>
+                <h3 class="bento-card-title">Prometheus + Health Checks</h3>
+                <p class="bento-card-description">
+                    Built-in metrics exporter, circuit breakers, session lifecycle hooks, exponential backoff retry logic.
+                </p>
+                <div class="bento-card-metric">
+                    <div class="bento-card-metric-value">9090</div>
+                    <div class="bento-card-metric-label">Metrics Port</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Performance Section -->
+    <section class="section" id="performance">
+        <div class="section-header scroll-reveal">
+            <span class="section-tag">Performance</span>
+            <h2 class="section-title">Industry-Leading Metrics</h2>
+            <p class="section-subtitle">
+                Built for speed, efficiency, and reliability. Compare ORCHAT against industry averages.
+            </p>
+        </div>
+
+        <div class="bento-grid">
+            <div class="bento-card bento-card-large scroll-reveal">
+                <h3 class="bento-card-title">Performance Comparison</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>ORCHAT</th>
+                            <th>Industry Average</th>
+                            <th>Advantage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Package Size</td>
+                            <td class="highlight">14,792 bytes</td>
+                            <td>50MB+</td>
+                            <td class="highlight">3,378× smaller</td>
+                        </tr>
+                        <tr>
+                            <td>Cold Start</td>
+                            <td class="highlight">0.12 seconds</td>
+                            <td>1.5+ seconds</td>
+                            <td class="highlight">12.5× faster</td>
+                        </tr>
+                        <tr>
+                            <td>Streaming Latency</td>
+                            <td class="highlight">12ms</td>
+                            <td>150ms</td>
+                            <td class="highlight">12.5× lower</td>
+                        </tr>
+                        <tr>
+                            <td>Memory (idle)</td>
+                            <td class="highlight">3.2MB</td>
+                            <td>50MB</td>
+                            <td class="highlight">15.6× lighter</td>
+                        </tr>
+                        <tr>
+                            <td>History Lookup</td>
+                            <td class="highlight">O(1)</td>
+                            <td>O(n)</td>
+                            <td class="highlight">Constant time</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bento-card bento-card-tall scroll-reveal scroll-delay-1">
+                <h3 class="bento-card-title">Architectural Parameters</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Standard</th>
+                            <th>Enterprise</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Max Tokens</td>
+                            <td>1,000</td>
+                            <td class="highlight">2,000</td>
+                        </tr>
+                        <tr>
+                            <td>Input Length</td>
+                            <td>4,000 chars</td>
+                            <td class="highlight">8,000 chars</td>
+                        </tr>
+                        <tr>
+                            <td>Request Timeout</td>
+                            <td>30s</td>
+                            <td class="highlight">45s</td>
+                        </tr>
+                        <tr>
+                            <td>Retry Attempts</td>
+                            <td>2</td>
+                            <td class="highlight">5</td>
+                        </tr>
+                        <tr>
+                            <td>History Length</td>
+                            <td>10 turns</td>
+                            <td class="highlight">20 turns</td>
+                        </tr>
+                        <tr>
+                            <td>Log Levels</td>
+                            <td>8</td>
+                            <td class="highlight">13</td>
+                        </tr>
+                        <tr>
+                            <td>Exit Codes</td>
+                            <td>8 POSIX</td>
+                            <td class="highlight">Full 255 range</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bento-card scroll-reveal scroll-delay-2">
+                <h3 class="bento-card-title">Benchmarks</h3>
+                <div class="bento-card-metric">
+                    <div class="bento-card-metric-value">2.3s</div>
+                    <div class="bento-card-metric-label">1000-token Response</div>
+                </div>
+                <div class="bento-card-metric">
+                    <div class="bento-card-metric-value">0.001s</div>
+                    <div class="bento-card-metric-label">History Lookup</div>
+                </div>
+                <div class="bento-card-metric">
+                    <div class="bento-card-metric-value">95%</div>
+                    <div class="bento-card-metric-label">Validation Pass Rate</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="section" id="architecture">
+        <div class="section-header scroll-reveal">
+            <span class="section-tag">Architecture</span>
+            <h2 class="section-title">17 Modular Components</h2>
+            <p class="section-subtitle">
+                Built on 50+ years of engineering experience. Every module is sized, named, and bounded. Nothing is accidental.
+            </p>
+        </div>
+
+        <div class="architecture-diagram scroll-reveal">
+            <div class="architecture-flow">
+                <div class="architecture-node">
+                    <div class="architecture-node-title">Entry</div>
+                    <div class="architecture-node-value">orchat</div>
+                </div>
+                <div class="architecture-arrow">→</div>
+                <div class="architecture-node">
+                    <div class="architecture-node-title">Bootstrap</div>
+                    <div class="architecture-node-value">10KB</div>
+                </div>
+                <div class="architecture-arrow">→</div>
+                <div class="architecture-node">
+                    <div class="architecture-node-title">Validation</div>
+                    <div class="architecture-node-value">8K chars</div>
+                </div>
+                <div class="architecture-arrow">→</div>
+                <div class="architecture-node">
+                    <div class="architecture-node-title">OpenRouter</div>
+                    <div class="architecture-node-value">348+ Models</div>
+                </div>
+                <div class="architecture-arrow">→</div>
+                <div class="architecture-node">
+                    <div class="architecture-node-title">Stream</div>
+                    <div class="architecture-node-value">12ms</div>
+                </div>
+                <div class="architecture-arrow">→</div>
+                <div class="architecture-node">
+                    <div class="architecture-node-title">History</div>
+                    <div class="architecture-node-value">O(1)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bento-grid" style="margin-top: 3rem;">
+            <div class="bento-card scroll-reveal scroll-delay-1">
+                <h3 class="bento-card-title">Core Modules</h3>
+                <ul class="feature-list">
+                    <li><span class="feature-list-icon">•</span><span>bootstrap.sh — Orchestrator</span></li>
+                    <li><span class="feature-list-icon">•</span><span>constants.sh — API endpoints</span></li>
+                    <li><span class="feature-list-icon">•</span><span>config.sh — Profile management</span></li>
+                    <li><span class="feature-list-icon">•</span><span>core.sh — Network logic</span></li>
+                    <li><span class="feature-list-icon">•</span><span>streaming.sh — Real-time chunks</span></li>
+                    <li><span class="feature-list-icon">•</span><span>interactive.sh — Multi-turn REPL</span></li>
+                    <li><span class="feature-list-icon">•</span><span>history.sh — JSON persistence</span></li>
+                </ul>
+            </div>
+
+            <div class="bento-card scroll-reveal scroll-delay-2">
+                <h3 class="bento-card-title">Enterprise Modules</h3>
+                <ul class="feature-list">
+                    <li><span class="feature-list-icon">•</span><span>enterprise_logger.sh — 13 levels</span></li>
+                    <li><span class="feature-list-icon">•</span><span>encoding.sh — UTF-8 BOM handling</span></li>
+                    <li><span class="feature-list-icon">•</span><span>payload.sh — Request builder</span></li>
+                    <li><span class="feature-list-icon">•</span><span>session.sh — Lifecycle hooks</span></li>
+                    <li><span class="feature-list-icon">•</span><span>io.sh — Input/output handlers</span></li>
+                    <li><span class="feature-list-icon">•</span><span>utils.sh — Helper functions</span></li>
+                    <li><span class="feature-list-icon">•</span><span>env.sh — Environment detection</span></li>
+                </ul>
+            </div>
+
+            <div class="bento-card scroll-reveal scroll-delay-3">
+                <h3 class="bento-card-title">POSIX Exit Codes</h3>
+                <ul class="feature-list">
+                    <li><span class="feature-list-icon">✓</span><span>E_OK=0 — Absolute Success</span></li>
+                    <li><span class="feature-list-icon">!</span><span>E_KEY_MISSING=1 — API key unset</span></li>
+                    <li><span class="feature-list-icon">!</span><span>E_NETWORK_FAIL=3 — Connectivity</span></li>
+                    <li><span class="feature-list-icon">!</span><span>E_API_FAIL=4 — API error</span></li>
+                    <li><span class="feature-list-icon">!</span><span>E_PARSE_FAIL=5 — JSON failure</span></li>
+                    <li><span class="feature-list-icon">!</span><span>E_INVALID_INPUT=6 — Input violation</span></li>
+                    <li><span class="feature-list-icon">!</span><span>E_DEPENDENCY=7 — Missing curl/jq</span></li>
+                </ul>
+            </div>
+
+            <div class="bento-card scroll-reveal scroll-delay-4">
+                <h3 class="bento-card-title">Validation Suite</h3>
+                <ul class="feature-list">
+                    <li><span class="feature-list-icon">✓</span><span>Fresh install tests</span></li>
+                    <li><span class="feature-list-icon">✓</span><span>Edge-case validation</span></li>
+                    <li><span class="feature-list-icon">✓</span><span>Startup and memory profiling</span></li>
+                    <li><span class="feature-list-icon">✓</span><span>Network failure scenarios</span></li>
+                    <li><span class="feature-list-icon">✓</span><span>Prometheus metrics validation</span></li>
+                    <li><span class="feature-list-icon">✓</span><span>19+ torture tests passed</span></li>
+                    <li><span class="feature-list-icon">✓</span><span>FREEZE-7.5-001 certified</span></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section class="section" id="install">
+        <div class="section-header scroll-reveal">
+            <span class="section-tag">Installation</span>
+            <h2 class="section-title">One-Line Installation</h2>
+            <p class="section-subtitle">
+                Choose your platform. Get started in seconds.
+            </p>
+        </div>
+
+        <div class="install-grid">
+            <div class="install-card scroll-reveal scroll-delay-1">
+                <div class="install-card-header">
+                    <div class="install-card-icon">🐧</div>
+                    <h3 class="install-card-title">Debian / Ubuntu</h3>
+                </div>
+                <div class="install-card-command">
+                    wget -q github.com/.../orchat.deb \<br>
+                    && sudo dpkg -i orchat.deb
+                </div>
+            </div>
+
+            <div class="install-card scroll-reveal scroll-delay-2">
+                <div class="install-card-header">
+                    <div class="install-card-icon">🌐</div>
+                    <h3 class="install-card-title">All Linux</h3>
+                </div>
+                <div class="install-card-command">
+                    curl -sSL raw.githubusercontent.com/.../install.sh | bash
+                </div>
+            </div>
+
+            <div class="install-card scroll-reveal scroll-delay-3">
+                <div class="install-card-header">
+                    <div class="install-card-icon">🍺</div>
+                    <h3 class="install-card-title">macOS</h3>
+                </div>
+                <div class="install-card-command">
+                    brew install orchat
+                </div>
+            </div>
+
+            <div class="install-card scroll-reveal scroll-delay-4">
+                <div class="install-card-header">
+                    <div class="install-card-icon">🐳</div>
+                    <h3 class="install-card-title">Docker</h3>
+                </div>
+                <div class="install-card-command">
+                    docker run -e OPENROUTER_API_KEY="sk-or-..." ghcr.io/ariyan-pro/orchat:latest
+                </div>
+            </div>
+
+            <div class="install-card scroll-reveal scroll-delay-1">
+                <div class="install-card-header">
+                    <div class="install-card-icon">🐍</div>
+                    <h3 class="install-card-title">PyPI</h3>
+                </div>
+                <div class="install-card-command">
+                    pip install orchat-enterprise
+                </div>
+            </div>
+
+            <div class="install-card scroll-reveal scroll-delay-2">
+                <div class="install-card-header">
+                    <div class="install-card-icon">🪟</div>
+                    <h3 class="install-card-title">Windows (WSL2)</h3>
+                </div>
+                <div class="install-card-command">
+                    .\setup-windows.ps1
+                </div>
+            </div>
+
+            <div class="install-card scroll-reveal scroll-delay-3">
+                <div class="install-card-header">
+                    <div class="install-card-icon">🤗</div>
+                    <h3 class="install-card-title">HuggingFace</h3>
+                </div>
+                <div class="install-card-command">
+                    Web Demo — No Install Required
+                </div>
+            </div>
+
+            <div class="install-card scroll-reveal scroll-delay-4">
+                <div class="install-card-header">
+                    <div class="install-card-icon">📦</div>
+                    <h3 class="install-card-title">Kubernetes</h3>
+                </div>
+                <div class="install-card-command">
+                    kubectl apply -f deployment/
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section class="section">
+        <div class="section-header scroll-reveal">
+            <span class="section-tag">Quick Start</span>
+            <h2 class="section-title">Get Started in Seconds</h2>
+        </div>
+
+        <div class="bento-card bento-card-wide scroll-reveal" style="max-width: 800px; margin: 0 auto;">
+            <div class="code-block" style="background: transparent; border: none; padding: 0;">
+                <code style="color: var(--text-secondary);">
+<span class="comment"># 1. Set your API key (OpenRouter)</span><br>
+<span class="keyword">orchat config set</span> --api-key <span class="string">"sk-or-..."</span><br><br>
+<span class="comment"># 2. Start chatting</span><br>
+<span class="keyword">orchat</span> <span class="string">"Explain quantum computing in simple terms"</span><br><br>
+<span class="comment"># 3. Interactive multi-turn session</span><br>
+<span class="keyword">orchat</span> --interactive<br><br>
+<span class="comment"># 4. Real-time streaming mode</span><br>
+<span class="keyword">orchat</span> --stream <span class="string">"Write a Python function for binary search"</span><br><br>
+<span class="comment"># 5. Browse 348+ available models</span><br>
+<span class="keyword">orchat</span> --models<br><br>
+<span class="comment"># 6. Target a specific model</span><br>
+<span class="keyword">orchat</span> --model <span class="string">"anthropic/claude-3-5-sonnet"</span> <span class="string">"Summarize this codebase"</span><br><br>
+<span class="comment"># 7. Export conversation as JSON</span><br>
+<span class="keyword">orchat</span> --export-json conversation.json<br><br>
+<span class="comment"># 8. View persistent history</span><br>
+<span class="keyword">cat</span> ~/.orchat_history | jq .
+                </code>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quote Section -->
+    <section class="section">
+        <div class="quote-card scroll-reveal">
+            <p class="quote-text">
+                "Built with the precision of a Swiss watch and the reliability of 50+ years of engineering experience."
+            </p>
+            <p class="quote-author">ORCHAT Enterprise CLI — v1.0.4 OPERATIONAL</p>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="scroll-reveal">
+            <h2 class="cta-title">Ready to Deploy?</h2>
+            <p class="cta-subtitle">
+                Join thousands of developers using ORCHAT for production-grade AI interactions.
+            </p>
+            <div class="cta-buttons">
+                <a href="https://github.com/Ariyan-Pro/OR-CHAT-CLI/releases" class="btn btn-primary">
+                    Download v1.0.4
+                </a>
+                <a href="https://github.com/Ariyan-Pro/OR-CHAT-CLI" class="btn btn-secondary">
+                    View on GitHub
+                </a>
+                <a href="https://huggingface.co/spaces/Ariyan-Pro/ORCHAT-Enterprise" class="btn btn-secondary">
+                    Live Demo
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="docs">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="footer-brand-logo">
+                    <div class="nav-logo-icon" style="width: 28px; height: 28px; font-size: 0.875rem;">O</div>
+                    ORCHAT Enterprise
+                </div>
+                <p class="footer-brand-description">
+                    Swiss Watch Precision AI Assistant — 3378× smaller, 12.5× faster, military-grade secure.
+                </p>
+            </div>
+
+            <div class="footer-column">
+                <h4>Product</h4>
+                <ul class="footer-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#performance">Performance</a></li>
+                    <li><a href="#architecture">Architecture</a></li>
+                    <li><a href="#security">Security</a></li>
+                    <li><a href="#install">Installation</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul class="footer-links">
+                    <li><a href="https://github.com/Ariyan-Pro/OR-CHAT-CLI">Documentation</a></li>
+                    <li><a href="https://github.com/Ariyan-Pro/OR-CHAT-CLI/issues">Issue Tracker</a></li>
+                    <li><a href="https://github.com/Ariyan-Pro/OR-CHAT-CLI/releases">Release Notes</a></li>
+                    <li><a href="https://github.com/Ariyan-Pro/OR-CHAT-CLI/blob/main/LICENSE">License</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-column">
+                <h4>Community</h4>
+                <ul class="footer-links">
+                    <li><a href="https://github.com/Ariyan-Pro/OR-CHAT-CLI">GitHub</a></li>
+                    <li><a href="https://huggingface.co/spaces/Ariyan-Pro/ORCHAT-Enterprise">HuggingFace</a></li>
+                    <li><a href="https://www.kaggle.com/datasets/ariyannadeem/orchat-enterprise-cli">Kaggle Dataset</a></li>
+                    <li><a href="https://github.com/Ariyan-Pro/OR-CHAT-CLI/pkgs/container/orchat">Docker Hub</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p class="footer-copyright">
+                Enterprise MIT License © 2026 Ariyan Pro
+            </p>
+            <div class="footer-social">
+                <a href="https://github.com/Ariyan-Pro/OR-CHAT-CLI" aria-label="GitHub">G</a>
+                <a href="https://huggingface.co/spaces/Ariyan-Pro/ORCHAT-Enterprise" aria-label="HuggingFace">🤗</a>
+                <a href="https://www.kaggle.com/datasets/ariyannadeem/orchat-enterprise-cli" aria-label="Kaggle">K</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Scroll reveal animation
+        const scrollReveals = document.querySelectorAll('.scroll-reveal');
+        
+        const revealOnScroll = () => {
+            scrollReveals.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const windowHeight = window.innerHeight;
+                
+                if (elementTop < windowHeight * 0.85) {
+                    element.classList.add('visible');
+                }
+            });
+        };
+
+        window.addEventListener('scroll', revealOnScroll);
+        window.addEventListener('load', revealOnScroll);
+
+        // Mouse parallax effect on cards
+        const cards = document.querySelectorAll('.bento-card, .install-card');
+        
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const deltaX = (x - centerX) / centerX;
+                const deltaY = (y - centerY) / centerY;
+                
+                card.style.transform = `translateY(-4px) rotateX(${deltaY * 2}deg) rotateY(${-deltaX * 2}deg)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+            });
+        });
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Intersection Observer for performance
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        scrollReveals.forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
